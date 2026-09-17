@@ -59,7 +59,7 @@ def home_ui():
             <div class="row justify-content-center">
                 <div class="col-lg-10">
                     <div class="card card-main p-4 p-md-5">
-                        <h2 class="text-center fw-bold text-primary mb-2">🌸 AI Phân Loại Hoa Iris (SVM Model)</h2>
+                        <h2 class="text-center fw-bold text-primary mb-2">🌸 Dự Đoán Phân Loại Hoa Iris </h2>
                         <p class="text-center text-muted mb-4">Hệ thống nhận diện loài hoa thông minh dựa trên giải thuật Support Vector Machine</p>
                         
                         <div class="row g-4">
