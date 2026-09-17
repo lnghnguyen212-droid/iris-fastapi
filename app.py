@@ -169,14 +169,12 @@ def home_ui():
                         
                         <!-- Header Section -->
                         <div class="text-center mb-4">
-                            <span class="badge badge-custom mb-2">⚡ SVM Core Architecture</span>
-                            <h1 class="fw-800 text-gradient display-5">IRIS AI ANALYTICS</h1>
-                            <p class="text-secondary fs-6">Hệ thống phân tích & nhận dạng đặc trưng sinh học thực thể thông minh</p>
+                            <h1 class="fw-800 text-gradient display-5">PHÂN LOẠI HOA IRIS 💐</h1>
                         </div>
 
                         <!-- Presets Section -->
                         <div class="mb-4 p-3 rounded-4 bg-black bg-opacity-20 border border-white border-opacity-10 text-center">
-                            <span class="small text-secondary me-2">⚡ Thử nhanh bộ mẫu:</span>
+                            <span class="small text-secondary me-2">⚡Chọn nhanh loài hoa mẫu:</span>
                             <button class="preset-btn me-1" onclick="loadPreset(5.1, 3.5, 1.4, 0.2)">🌸 Setosa</button>
                             <button class="preset-btn me-1" onclick="loadPreset(6.0, 2.9, 4.5, 1.5)">🌺 Versicolor</button>
                             <button class="preset-btn" onclick="loadPreset(6.5, 3.0, 5.5, 2.0)">🌻 Virginica</button>
@@ -231,7 +229,7 @@ def home_ui():
                                     </div>
                                     
                                     <button type="button" class="btn btn-predict w-100 py-3 mt-2 fs-6" onclick="makePrediction()">
-                                        🔮 KÍCH HOẠT DỰ ĐOÁN AI
+                                        🔮 PHÂN LOẠI NGAY
                                     </button>
                                 </form>
                             </div>
