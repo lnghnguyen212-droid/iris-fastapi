@@ -160,35 +160,7 @@ def home_ui():
                 border: 1px solid rgba(255, 255, 255, 0.05);
             }
         </style>
-    /* Hiệu ứng khung ảnh phát sáng & đổi màu khi hover */
-.img-hover-box {
-    position: relative;
-    overflow: hidden;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-    transition: all 0.4s ease-in-out;
-    margin-bottom: 1rem;
-}
-
-.img-hover-box:hover {
-    border-color: rgba(168, 85, 247, 0.6);
-    box-shadow: 0 12px 32px rgba(168, 85, 247, 0.4);
-    transform: translateY(-3px);
-}
-
-/* Hiệu ứng phóng to nhẹ hình hoa */
-.img-hover-box img {
-    width: 100%;
-    height: 250px;
-    object-fit: cover;
-    display: block;
-    transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-.img-hover-box:hover img {
-    transform: scale(1.08); /* Phóng to 8% mượt mà */
-}
+    
     </head>
     <body class="py-5">
         <div class="container">
@@ -394,4 +366,3 @@ def predict(data: IrisInput):
         "prediction": species_info[prediction]["name"],
         "info": species_info[prediction]
     }
-    
