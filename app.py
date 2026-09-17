@@ -254,7 +254,7 @@ def home_ui():
                                         <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">Matched 100%</span>
                                     </div>
 
-                                    <img id="flowerImg" src="" class="flower-img mb-3" alt="Predicted Specimen" style="width: 100%; max-height: 200px; object-fit: contain; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 4px;"
+                                    <img id="flowerImg" src="" class="flower-img mb-3" alt="Predicted Specimen" style="width: 100%; height: auto; max-height: 350px; object-fit: contain; border-radius: 12px;">
                                     <p id="flowerDesc" class="text-secondary small mb-3"></p>
 
                                     <!-- Radar Chart Section -->
