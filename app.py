@@ -19,19 +19,25 @@ species_info = {
         "name": "IRIS SETOSA",
         "badge": "Loài Đặc Hữu - Nhóm 01",
         "img": "https://upload.wikimedia.org/wikipedia/commons/5/56/Kosaciec_szczecinkowaty_Iris_setosa.jpg",
-        "desc": "Đặc trưng bởi lá đài rộng, cánh hoa nhỏ gọn. Mô hình SVM nhận diện loài này với độ tin cậy tuyệt đối 100%."
+        "desc": "Đặc trưng bởi lá đài rộng, cánh hoa nhỏ gọn. Mô hình SVM nhận diện loài này với độ tin cậy tuyệt đối 100%.",
+        "habitat": "Vùng khí hậu ôn đới, đầm lầy",
+        "origin": "Bắc Mỹ & Đông Bắc Á"
     },
     1: {
         "name": "IRIS VERSICOLOR",
         "badge": "Loài Phổ Biến - Nhóm 02",
         "img": "https://upload.wikimedia.org/wikipedia/commons/4/41/Iris_versicolor_3.jpg",
-        "desc": "Kích thước trung bình, dải màu từ lam xám đến tím sẫm. Thuộc nhóm trung gian có đặc trưng biến thiên cao."
+        "desc": "Kích thước trung bình, dải màu từ lam xám đến tím sẫm. Thuộc nhóm trung gian có đặc trưng biến thiên cao.",
+        "habitat": "Ven sông, suối, vùng ven hồ",
+        "origin": "Đông Bắc Bắc Mỹ"
     },
     2: {
         "name": "IRIS VIRGINICA",
         "badge": "Loài Kích Thước Lớn - Nhóm 03",
         "img": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Iris_virginica.jpg",
-        "desc": "Sở hữu cánh hoa và lá đài phát triển tối đa. Cấu trúc hình học vượt trội so với hai nhóm loài còn lại."
+        "desc": "Sở hữu cánh hoa và lá đài phát triển tối đa. Cấu trúc hình học vượt trội so với hai nhóm loài còn lại.",
+        "habitat": "Đồng cỏ ẩm ướt, đầm lầy cạn",
+        "origin": "Đông Nam Hoa Kỳ"
     }
 }
 
@@ -61,6 +67,7 @@ def home_ui():
                 color: #f8fafc; 
                 min-height: 100vh; 
                 font-family: 'Plus Jakarta Sans', sans-serif;
+                overflow-x: hidden;
             }
 
             .card-main { 
@@ -69,6 +76,8 @@ def home_ui():
                 box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); 
                 background: var(--glass-bg); 
                 backdrop-filter: blur(16px); 
+                position: relative;
+                z-index: 1;
             }
 
             .text-gradient {
@@ -135,12 +144,32 @@ def home_ui():
                 color: #fff;
             }
 
+            /* Khung ảnh nâng cấp hiệu ứng Hover & Neon Glow */
+            .img-hover-box {
+                position: relative;
+                overflow: hidden;
+                border-radius: 16px;
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+                transition: all 0.4s ease-in-out;
+            }
+
+            .img-hover-box:hover {
+                border-color: rgba(168, 85, 247, 0.6);
+                box-shadow: 0 12px 32px rgba(168, 85, 247, 0.4);
+                transform: translateY(-3px);
+            }
+
             .flower-img { 
                 width: 100%; 
-                height: 200px; 
+                height: 220px; 
                 object-fit: cover; 
-                border-radius: 16px; 
-                border: 1px solid var(--glass-border);
+                display: block;
+                transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            }
+
+            .img-hover-box:hover .flower-img {
+                transform: scale(1.08);
             }
 
             .result-card { 
@@ -160,7 +189,6 @@ def home_ui():
                 border: 1px solid rgba(255, 255, 255, 0.05);
             }
         </style>
-    
     </head>
     <body class="py-5">
         <div class="container">
@@ -255,11 +283,31 @@ def home_ui():
                                         <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">Matched 100%</span>
                                     </div>
 
-                                    <img id="flowerImg" src="" class="flower-img mb-3" alt="Predicted Specimen" style="width: 100%; height: auto; max-height: 350px; object-fit: contain; border-radius: 12px;">
-                                    <p id="flowerDesc" class="text-secondary small mb-3"></p>
+                                    <!-- Khung ảnh có hiệu ứng Hover -->
+                                    <div class="img-hover-box mb-3">
+                                        <img id="flowerImg" src="" class="flower-img" alt="Predicted Specimen">
+                                    </div>
+                                    
+                                    <p id="flowerDesc" class="text-secondary small mb-2"></p>
+
+                                    <!-- Thẻ chỉ số sinh học chi tiết bổ sung -->
+                                    <div class="row g-2 mb-3 text-start">
+                                        <div class="col-6">
+                                            <div class="p-2 rounded-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                                                <small class="text-secondary d-block" style="font-size: 0.72rem;">🏡 Môi trường sống</small>
+                                                <span class="fw-600 text-light" style="font-size: 0.8rem;" id="habitatVal">--</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="p-2 rounded-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                                                <small class="text-secondary d-block" style="font-size: 0.72rem;">📍 Phân bố chính</small>
+                                                <span class="fw-600 text-light" style="font-size: 0.8rem;" id="originVal">--</span>
+                                            </div>
+                                        </div>
+                                    </div>
 
                                     <!-- Radar Chart Section -->
-                                    <div class="radar-container" style="height: 190px;">
+                                    <div class="radar-container" style="height: 180px;">
                                         <canvas id="radarChart"></canvas>
                                     </div>
                                 </div>
@@ -272,7 +320,57 @@ def home_ui():
             </div>
         </div>
 
+        <!-- Script hiệu ứng hạt neon & logic ứng dụng -->
         <script>
+            // Canvas Particle Background (Hạt neon chuyển động)
+            const canvas = document.createElement('canvas');
+            canvas.style.position = 'fixed';
+            canvas.style.top = '0';
+            canvas.style.left = '0';
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            canvas.style.pointerEvents = 'none';
+            canvas.style.zIndex = '0';
+            document.body.appendChild(canvas);
+
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            for(let i = 0; i < 35; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    r: Math.random() * 2 + 1,
+                    dx: (Math.random() - 0.5) * 0.4,
+                    dy: (Math.random() - 0.5) * 0.4,
+                    alpha: Math.random() * 0.5 + 0.2
+                });
+            }
+
+            function animateParticles() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.x += p.dx;
+                    p.y += p.dy;
+                    if(p.x < 0 || p.x > canvas.width) p.dx *= -1;
+                    if(p.y < 0 || p.y > canvas.height) p.dy *= -1;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(168, 85, 247, ${p.alpha})`;
+                    ctx.fill();
+                });
+                requestAnimationFrame(animateParticles);
+            }
+            animateParticles();
+
+            // Core Web Logic
             let radarChart = null;
 
             function stepVal(id, delta) {
@@ -286,7 +384,7 @@ def home_ui():
                 document.getElementById('sepal_width').value = sw;
                 document.getElementById('petal_length').value = pl;
                 document.getElementById('petal_width').value = pw;
-                makePrediction(); // Tự động dự đoán ngay khi chọn mẫu
+                makePrediction();
             }
 
             async function makePrediction() {
@@ -310,16 +408,18 @@ def home_ui():
                 document.getElementById('flowerBadge').innerText = result.info.badge;
                 document.getElementById('flowerImg').src = result.info.img;
                 document.getElementById('flowerDesc').innerText = result.info.desc;
+                document.getElementById('habitatVal').innerText = result.info.habitat;
+                document.getElementById('originVal').innerText = result.info.origin;
 
                 renderRadar([sl, sw, pl, pw]);
             }
 
             function renderRadar(inputData) {
-                const ctx = document.getElementById('radarChart').getContext('2d');
+                const ctxRadar = document.getElementById('radarChart').getContext('2d');
                 
                 if (radarChart) { radarChart.destroy(); }
 
-                radarChart = new Chart(ctx, {
+                radarChart = new Chart(ctxRadar, {
                     type: 'radar',
                     data: {
                         labels: ['Sepal Length', 'Sepal Width', 'Petal Length', 'Petal Width'],
@@ -366,3 +466,4 @@ def predict(data: IrisInput):
         "prediction": species_info[prediction]["name"],
         "info": species_info[prediction]
     }
+    
