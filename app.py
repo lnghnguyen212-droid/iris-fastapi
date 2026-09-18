@@ -1,17 +1,17 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-import joblib 
+import joblib
 
 # Nạp mô hình SVM đã huấn luyện
-model = joblib.load("svm_model.pkl") 
+model = joblib.load("svm_model.pkl")
 
 app = FastAPI(title="Iris AI Neural Classifier")
 
 class IrisInput(BaseModel):
     sepal_length: float
     sepal_width: float
-    petal_length: float 
+    petal_length: float
     petal_width: float
 
 species_info = {
@@ -70,6 +70,18 @@ def home_ui():
                 overflow-x: hidden;
             }
 
+            /* Tràn viền màn hình với padding linh hoạt */
+            .main-wrapper {
+                width: 100%;
+                padding: 2rem 3rem;
+            }
+
+            @media (max-width: 768px) {
+                .main-wrapper {
+                    padding: 1rem;
+                }
+            }
+
             .card-main { 
                 border-radius: 24px; 
                 border: 1px solid var(--glass-border); 
@@ -78,6 +90,7 @@ def home_ui():
                 backdrop-filter: blur(16px); 
                 position: relative;
                 z-index: 1;
+                width: 100%;
             }
 
             .text-gradient {
@@ -86,21 +99,13 @@ def home_ui():
                 -webkit-text-fill-color: transparent;
             }
 
-            .badge-custom {
-                background: rgba(56, 189, 248, 0.1);
-                border: 1px solid rgba(56, 189, 248, 0.3);
-                color: var(--accent-cyan);
-                border-radius: 8px;
-                padding: 6px 12px;
-            }
-
             .preset-btn {
                 background: rgba(255, 255, 255, 0.05);
                 border: 1px solid var(--glass-border);
                 color: #94a3b8;
                 border-radius: 10px;
-                padding: 6px 12px;
-                font-size: 0.85rem;
+                padding: 8px 16px;
+                font-size: 0.9rem;
                 transition: all 0.2s;
             }
             .preset-btn:hover {
@@ -131,20 +136,21 @@ def home_ui():
                 color: var(--accent-cyan) !important;
                 font-weight: 700;
                 text-align: center;
+                font-size: 1.1rem;
             }
 
             .btn-step {
                 background: rgba(255, 255, 255, 0.08);
                 border: 1px solid var(--glass-border);
                 color: #fff;
-                width: 42px;
+                width: 48px;
             }
             .btn-step:hover {
                 background: rgba(255, 255, 255, 0.2);
                 color: #fff;
             }
 
-            /* Khung ảnh nâng cấp hiệu ứng Hover & Neon Glow */
+            /* Khung ảnh to đẹp tràn cột */
             .img-hover-box {
                 position: relative;
                 overflow: hidden;
@@ -157,19 +163,18 @@ def home_ui():
             .img-hover-box:hover {
                 border-color: rgba(168, 85, 247, 0.6);
                 box-shadow: 0 12px 32px rgba(168, 85, 247, 0.4);
-                transform: translateY(-3px);
             }
 
             .flower-img { 
                 width: 100%; 
-                height: 220px; 
+                height: 280px; 
                 object-fit: cover; 
                 display: block;
                 transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
             }
 
             .img-hover-box:hover .flower-img {
-                transform: scale(1.08);
+                transform: scale(1.06);
             }
 
             .result-card { 
@@ -185,144 +190,140 @@ def home_ui():
             .radar-container {
                 background: rgba(0, 0, 0, 0.2);
                 border-radius: 16px;
-                padding: 12px;
+                padding: 16px;
                 border: 1px solid rgba(255, 255, 255, 0.05);
+                height: 240px;
             }
         </style>
     </head>
-    <body class="py-5">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-lg-10">
-                    <div class="card card-main p-4 p-md-5">
-                        
-                        <!-- Header Section -->
-                        <div class="text-center mb-4">
-                            <h1 class="fw-800 text-gradient display-5">PHÂN LOẠI HOA IRIS 💐</h1>
-                        </div>
+    <body>
+        <div class="main-wrapper">
+            <div class="card card-main p-4 p-md-5">
+                
+                <!-- Header Section -->
+                <div class="text-center mb-4">
+                    <h1 class="fw-800 text-gradient display-4">PHÂN LOẠI HOA IRIS 💐</h1>
+                </div>
 
-                        <!-- Presets Section -->
-                        <div class="mb-4 p-3 rounded-4 bg-black bg-opacity-20 border border-white border-opacity-10 text-center">
-                            <span class="small text-secondary me-2">⚡Chọn nhanh loài hoa mẫu:</span>
-                            <button class="preset-btn me-1" onclick="loadPreset(5.1, 3.5, 1.4, 0.2)">🌸 Setosa</button>
-                            <button class="preset-btn me-1" onclick="loadPreset(6.0, 2.9, 4.5, 1.5)">🌺 Versicolor</button>
-                            <button class="preset-btn" onclick="loadPreset(6.5, 3.0, 5.5, 2.0)">🌻 Virginica</button>
-                        </div>
-                        
-                        <div class="row g-4">
-                            <!-- Input Column -->
-                            <div class="col-md-6 border-end border-secondary border-opacity-25 pe-md-4">
-                                <h5 class="fw-600 mb-4 text-light d-flex align-items-center gap-2">
-                                    <span>🎛️</span> Thông số đầu vào (cm)
-                                </h5>
-                                <form id="irisForm">
-                                    
-                                    <!-- Field 1 -->
-                                    <div class="mb-3">
-                                        <label class="form-label text-secondary small mb-1">Chiều dài lá đài (Sepal Length)</label>
-                                        <div class="input-group">
-                                            <button class="btn btn-step" type="button" onclick="stepVal('sepal_length', -0.1)">-</button>
-                                            <input type="number" class="form-control custom-num-input" id="sepal_length" value="5.1" step="0.1" min="1" max="10">
-                                            <button class="btn btn-step" type="button" onclick="stepVal('sepal_length', 0.1)">+</button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Field 2 -->
-                                    <div class="mb-3">
-                                        <label class="form-label text-secondary small mb-1">Chiều rộng lá đài (Sepal Width)</label>
-                                        <div class="input-group">
-                                            <button class="btn btn-step" type="button" onclick="stepVal('sepal_width', -0.1)">-</button>
-                                            <input type="number" class="form-control custom-num-input" id="sepal_width" value="3.5" step="0.1" min="1" max="10">
-                                            <button class="btn btn-step" type="button" onclick="stepVal('sepal_width', 0.1)">+</button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Field 3 -->
-                                    <div class="mb-3">
-                                        <label class="form-label text-secondary small mb-1">Chiều dài cánh hoa (Petal Length)</label>
-                                        <div class="input-group">
-                                            <button class="btn btn-step" type="button" onclick="stepVal('petal_length', -0.1)">-</button>
-                                            <input type="number" class="form-control custom-num-input" id="petal_length" value="1.4" step="0.1" min="1" max="10">
-                                            <button class="btn btn-step" type="button" onclick="stepVal('petal_length', 0.1)">+</button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Field 4 -->
-                                    <div class="mb-4">
-                                        <label class="form-label text-secondary small mb-1">Chiều rộng cánh hoa (Petal Width)</label>
-                                        <div class="input-group">
-                                            <button class="btn btn-step" type="button" onclick="stepVal('petal_width', -0.1)">-</button>
-                                            <input type="number" class="form-control custom-num-input" id="petal_width" value="0.2" step="0.1" min="0.1" max="10">
-                                            <button class="btn btn-step" type="button" onclick="stepVal('petal_width', 0.1)">+</button>
-                                        </div>
-                                    </div>
-                                    
-                                    <button type="button" class="btn btn-predict w-100 py-3 mt-2 fs-6" onclick="makePrediction()">
-                                        🔮 PHÂN LOẠI NGAY
-                                    </button>
-                                </form>
+                <!-- Presets Section -->
+                <div class="mb-4 p-3 rounded-4 bg-black bg-opacity-20 border border-white border-opacity-10 text-center">
+                    <span class="small text-secondary me-3">⚡ Chọn nhanh loài hoa mẫu:</span>
+                    <button class="preset-btn me-2" onclick="loadPreset(5.1, 3.5, 1.4, 0.2)">🌸 Setosa</button>
+                    <button class="preset-btn me-2" onclick="loadPreset(6.0, 2.9, 4.5, 1.5)">🌺 Versicolor</button>
+                    <button class="preset-btn" onclick="loadPreset(6.5, 3.0, 5.5, 2.0)">🌻 Virginica</button>
+                </div>
+                
+                <div class="row g-4 g-xl-5">
+                    <!-- Input Column -->
+                    <div class="col-lg-6 border-end border-secondary border-opacity-25 pe-lg-5">
+                        <h4 class="fw-600 mb-4 text-light d-flex align-items-center gap-2">
+                            <span>🎛️</span> Thông số đầu vào (cm)
+                        </h4>
+                        <form id="irisForm">
+                            
+                            <!-- Field 1 -->
+                            <div class="mb-4">
+                                <label class="form-label text-secondary mb-2">Chiều dài lá đài (Sepal Length)</label>
+                                <div class="input-group input-group-lg">
+                                    <button class="btn btn-step" type="button" onclick="stepVal('sepal_length', -0.1)">-</button>
+                                    <input type="number" class="form-control custom-num-input" id="sepal_length" value="5.1" step="0.1" min="1" max="10">
+                                    <button class="btn btn-step" type="button" onclick="stepVal('sepal_length', 0.1)">+</button>
+                                </div>
                             </div>
 
-                            <!-- Output Column -->
-                            <div class="col-md-6 d-flex flex-column justify-content-center ps-md-4">
-                                
-                                <!-- Standby Placeholder -->
-                                <div id="placeholderText" class="text-center text-secondary my-auto py-5">
-                                    <div class="mb-3 fs-1 opacity-50">📡</div>
-                                    <h6 class="fw-600 text-light">Đang chờ tín hiệu dữ liệu...</h6>
-                                    <p class="small text-muted mb-0">Chọn mẫu nhanh hoặc tự điều chỉnh thông số bên trái để phân tích.</p>
+                            <!-- Field 2 -->
+                            <div class="mb-4">
+                                <label class="form-label text-secondary mb-2">Chiều rộng lá đài (Sepal Width)</label>
+                                <div class="input-group input-group-lg">
+                                    <button class="btn btn-step" type="button" onclick="stepVal('sepal_width', -0.1)">-</button>
+                                    <input type="number" class="form-control custom-num-input" id="sepal_width" value="3.5" step="0.1" min="1" max="10">
+                                    <button class="btn btn-step" type="button" onclick="stepVal('sepal_width', 0.1)">+</button>
                                 </div>
+                            </div>
 
-                                <!-- Result Visualizer -->
-                                <div id="resultCard" class="result-card">
-                                    <div class="d-flex align-items-center justify-content-between mb-3">
-                                        <div>
-                                            <span id="flowerBadge" class="badge bg-primary bg-opacity-25 text-info border border-info border-opacity-25 mb-1"></span>
-                                            <h3 id="flowerName" class="fw-800 text-light m-0"></h3>
-                                        </div>
-                                        <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">Matched 100%</span>
-                                    </div>
+                            <!-- Field 3 -->
+                            <div class="mb-4">
+                                <label class="form-label text-secondary mb-2">Chiều dài cánh hoa (Petal Length)</label>
+                                <div class="input-group input-group-lg">
+                                    <button class="btn btn-step" type="button" onclick="stepVal('petal_length', -0.1)">-</button>
+                                    <input type="number" class="form-control custom-num-input" id="petal_length" value="1.4" step="0.1" min="1" max="10">
+                                    <button class="btn btn-step" type="button" onclick="stepVal('petal_length', 0.1)">+</button>
+                                </div>
+                            </div>
 
-                                    <!-- Khung ảnh có hiệu ứng Hover -->
-                                    <div class="img-hover-box mb-3">
-                                        <img id="flowerImg" src="" class="flower-img" alt="Predicted Specimen">
-                                    </div>
-                                    
-                                    <p id="flowerDesc" class="text-secondary small mb-2"></p>
+                            <!-- Field 4 -->
+                            <div class="mb-4">
+                                <label class="form-label text-secondary mb-2">Chiều rộng cánh hoa (Petal Width)</label>
+                                <div class="input-group input-group-lg">
+                                    <button class="btn btn-step" type="button" onclick="stepVal('petal_width', -0.1)">-</button>
+                                    <input type="number" class="form-control custom-num-input" id="petal_width" value="0.2" step="0.1" min="0.1" max="10">
+                                    <button class="btn btn-step" type="button" onclick="stepVal('petal_width', 0.1)">+</button>
+                                </div>
+                            </div>
+                            
+                            <button type="button" class="btn btn-predict w-100 py-3 mt-3 fs-5" onclick="makePrediction()">
+                                🔮 PHÂN LOẠI NGAY
+                            </button>
+                        </form>
+                    </div>
 
-                                    <!-- Thẻ chỉ số sinh học chi tiết bổ sung -->
-                                    <div class="row g-2 mb-3 text-start">
-                                        <div class="col-6">
-                                            <div class="p-2 rounded-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
-                                                <small class="text-secondary d-block" style="font-size: 0.72rem;">🏡 Môi trường sống</small>
-                                                <span class="fw-600 text-light" style="font-size: 0.8rem;" id="habitatVal">--</span>
-                                            </div>
-                                        </div>
-                                        <div class="col-6">
-                                            <div class="p-2 rounded-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
-                                                <small class="text-secondary d-block" style="font-size: 0.72rem;">📍 Phân bố chính</small>
-                                                <span class="fw-600 text-light" style="font-size: 0.8rem;" id="originVal">--</span>
-                                            </div>
-                                        </div>
-                                    </div>
+                    <!-- Output Column -->
+                    <div class="col-lg-6 d-flex flex-column justify-content-center ps-lg-5">
+                        
+                        <!-- Standby Placeholder -->
+                        <div id="placeholderText" class="text-center text-secondary my-auto py-5">
+                            <div class="mb-3 display-3 opacity-50">📡</div>
+                            <h4 class="fw-600 text-light">Đang chờ tín hiệu dữ liệu...</h4>
+                            <p class="text-muted mb-0">Chọn mẫu nhanh hoặc điều chỉnh thông số để phân tích.</p>
+                        </div>
 
-                                    <!-- Radar Chart Section -->
-                                    <div class="radar-container" style="height: 180px;">
-                                        <canvas id="radarChart"></canvas>
+                        <!-- Result Visualizer -->
+                        <div id="resultCard" class="result-card">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div>
+                                    <span id="flowerBadge" class="badge bg-primary bg-opacity-25 text-info border border-info border-opacity-25 mb-1 fs-6"></span>
+                                    <h2 id="flowerName" class="fw-800 text-light m-0"></h2>
+                                </div>
+                                <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25 fs-6 px-3 py-2">Matched 100%</span>
+                            </div>
+
+                            <!-- Khung ảnh tràn chiều rộng -->
+                            <div class="img-hover-box mb-3">
+                                <img id="flowerImg" src="" class="flower-img" alt="Predicted Specimen">
+                            </div>
+                            
+                            <p id="flowerDesc" class="text-secondary mb-3"></p>
+
+                            <!-- Thẻ thông tin bổ sung -->
+                            <div class="row g-3 mb-4 text-start">
+                                <div class="col-6">
+                                    <div class="p-3 rounded-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                                        <small class="text-secondary d-block mb-1">🏡 Môi trường sống</small>
+                                        <span class="fw-600 text-light fs-6" id="habitatVal">--</span>
                                     </div>
                                 </div>
+                                <div class="col-6">
+                                    <div class="p-3 rounded-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                                        <small class="text-secondary d-block mb-1">📍 Phân bố chính</small>
+                                        <span class="fw-600 text-light fs-6" id="originVal">--</span>
+                                    </div>
+                                </div>
+                            </div>
 
+                            <!-- Radar Chart -->
+                            <div class="radar-container">
+                                <canvas id="radarChart"></canvas>
                             </div>
                         </div>
 
                     </div>
                 </div>
+
             </div>
         </div>
 
-        <!-- Script hiệu ứng hạt neon & logic ứng dụng -->
+        <!-- Background particles & App JS -->
         <script>
-            // Canvas Particle Background (Hạt neon chuyển động)
             const canvas = document.createElement('canvas');
             canvas.style.position = 'fixed';
             canvas.style.top = '0';
@@ -343,7 +344,7 @@ def home_ui():
             window.addEventListener('resize', resize);
             resize();
 
-            for(let i = 0; i < 35; i++) {
+            for(let i = 0; i < 40; i++) {
                 particles.push({
                     x: Math.random() * canvas.width,
                     y: Math.random() * canvas.height,
@@ -370,7 +371,6 @@ def home_ui():
             }
             animateParticles();
 
-            // Core Web Logic
             let radarChart = null;
 
             function stepVal(id, delta) {
@@ -443,7 +443,7 @@ def home_ui():
                                 max: 8,
                                 grid: { color: 'rgba(255, 255, 255, 0.1)' },
                                 angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
-                                pointLabels: { color: '#94a3b8', font: { size: 10 } },
+                                pointLabels: { color: '#94a3b8', font: { size: 11 } },
                                 ticks: { display: false }
                             } 
                         }
