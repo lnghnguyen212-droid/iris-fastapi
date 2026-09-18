@@ -4,7 +4,7 @@ from pydantic import BaseModel
 import joblib
 
 # Nạp mô hình SVM đã huấn luyện
-model = joblib.load("svm_model.pkl")
+model = joblib.load("svm_model.pkl") 
 
 app = FastAPI(title="Iris AI Neural Classifier")
 
