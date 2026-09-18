@@ -11,7 +11,7 @@ app = FastAPI(title="Iris AI Neural Classifier")
 class IrisInput(BaseModel):
     sepal_length: float
     sepal_width: float
-    petal_length: float
+    petal_length: float 
     petal_width: float
 
 species_info = {
