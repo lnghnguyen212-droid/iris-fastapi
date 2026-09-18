@@ -56,43 +56,46 @@ def home_ui():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Iris Analytics Pro - NextGen UI</title>
+        <title>Iris Analytics Pro - Full Layout</title>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <style>
             :root {
                 --bg-main: #0a0d18;
-                --card-bg: rgba(23, 31, 56, 0.75);
+                --card-bg: rgba(23, 31, 56, 0.8);
                 --card-border: rgba(255, 255, 255, 0.12);
                 --accent-cyan: #00f2fe;
                 --accent-pink: #ff007f;
                 --accent-purple: #7928ca;
                 --text-main: #f8fafc;
                 --text-sub: #cbd5e1;
+                --stat-bg: rgba(0, 0, 0, 0.3);
             }
 
             [data-bs-theme="light"] {
-                --bg-main: #f0f4f9;
-                --card-bg: rgba(255, 255, 255, 0.85);
-                --card-border: rgba(0, 0, 0, 0.08);
+                --bg-main: #f1f5f9;
+                --card-bg: #ffffff;
+                --card-border: #e2e8f0;
+                --accent-cyan: #0284c7;
+                --accent-pink: #e11d48;
+                --accent-purple: #6b21a8;
                 --text-main: #0f172a;
                 --text-sub: #475569;
+                --stat-bg: #f8fafc;
             }
 
             body {
                 background-color: var(--bg-main);
-                background-image: 
-                    radial-gradient(circle at 15% 15%, rgba(121, 40, 202, 0.25) 0%, transparent 45%),
-                    radial-gradient(circle at 85% 85%, rgba(0, 242, 254, 0.2) 0%, transparent 45%);
                 color: var(--text-main);
                 font-family: 'Plus Jakarta Sans', sans-serif;
                 min-height: 100vh;
-                font-size: 1.05rem; /* Tăng cỡ chữ cơ bản */
+                font-size: 1.05rem;
+                transition: background-color 0.3s, color 0.3s;
             }
 
             .navbar-custom {
-                background: rgba(10, 13, 24, 0.85);
+                background: var(--card-bg);
                 backdrop-filter: blur(16px);
                 border-bottom: 1px solid var(--card-border);
             }
@@ -101,28 +104,26 @@ def home_ui():
                 background: var(--card-bg);
                 border: 1px solid var(--card-border);
                 backdrop-filter: blur(20px);
-                border-radius: 24px;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                border-radius: 20px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+                transition: background 0.3s, border 0.3s;
             }
 
-            /* Cải thiện Tab Navigation */
             .nav-pills .nav-link {
                 color: var(--text-sub);
-                border-radius: 14px;
-                padding: 12px 28px;
+                border-radius: 12px;
+                padding: 10px 24px;
                 font-weight: 700;
-                font-size: 1.1rem;
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                font-size: 1.05rem;
             }
             .nav-pills .nav-link.active {
-                background: linear-gradient(135deg, #7928ca 0%, #ff007f 100%);
+                background: linear-gradient(135deg, var(--accent-purple) 0%, var(--accent-pink) 100%);
                 color: #fff;
-                box-shadow: 0 0 20px rgba(255, 0, 127, 0.4);
+                box-shadow: 0 4px 15px rgba(225, 29, 72, 0.3);
             }
 
-            /* Cải thiện Input & Controls */
             .form-label-custom {
-                font-size: 1.05rem;
+                font-size: 1rem;
                 font-weight: 700;
                 color: var(--text-main);
                 display: flex;
@@ -130,105 +131,97 @@ def home_ui():
             }
 
             .custom-input {
-                background: rgba(0, 0, 0, 0.25) !important;
+                background: var(--stat-bg) !important;
                 border: 2px solid var(--card-border) !important;
                 color: var(--accent-cyan) !important;
                 font-weight: 800;
-                font-size: 1.25rem;
+                font-size: 1.2rem;
                 text-align: center;
-                border-radius: 12px;
+                border-radius: 10px;
             }
 
             .btn-step {
-                background: linear-gradient(135deg, #2a2d3d, #1a1c29);
+                background: var(--stat-bg);
                 border: 1px solid var(--card-border);
+                color: var(--text-main);
+                font-weight: 800;
+                font-size: 1.2rem;
+                width: 42px;
+                border-radius: 10px !important;
+            }
+
+            .btn-analyze {
+                background: linear-gradient(135deg, var(--accent-cyan) 0%, #3b82f6 100%);
                 color: #fff;
                 font-weight: 800;
                 font-size: 1.2rem;
-                width: 45px;
-                border-radius: 12px !important;
-            }
-            .btn-step:hover {
-                background: var(--accent-cyan);
-                color: #000;
-            }
-
-            /* Slider tùy chỉnh rực rỡ */
-            .form-range::-webkit-slider-thumb {
-                background: var(--accent-pink);
-                box-shadow: 0 0 10px var(--accent-pink);
-            }
-
-            /* Nút Phân Tích rực rỡ */
-            .btn-analyze {
-                background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
-                color: #000;
-                font-weight: 800;
-                font-size: 1.25rem;
-                letter-spacing: 0.5px;
                 border: none;
-                border-radius: 16px;
-                box-shadow: 0 0 25px rgba(0, 242, 254, 0.4);
-                transition: all 0.3s;
-            }
-            .btn-analyze:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 0 35px rgba(0, 242, 254, 0.7);
-                color: #000;
+                border-radius: 14px;
+                box-shadow: 0 4px 20px rgba(2, 132, 199, 0.3);
             }
 
-            .img-box {
-                border-radius: 20px;
+            /* Phóng to Ảnh specimen */
+            .img-box-large {
+                border-radius: 16px;
                 overflow: hidden;
                 border: 2px solid var(--card-border);
                 background: #000;
-                height: 300px;
-                box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+                height: 340px;
+                width: 100%;
             }
-            .img-box img {
+            .img-box-large img {
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
             }
 
-            .progress-custom {
-                height: 14px;
-                background: rgba(255, 255, 255, 0.1);
-                border-radius: 10px;
-                overflow: hidden;
+            /* Widget thống kê bổ sung */
+            .stat-box {
+                background: var(--stat-bg);
+                border: 1px solid var(--card-border);
+                border-radius: 14px;
+                padding: 12px 16px;
             }
 
-            /* Cỡ chữ mô tả và nhãn */
-            .text-large { font-size: 1.15rem; }
-            .flower-title { font-size: 2.2rem; font-weight: 800; }
+            .progress-custom {
+                height: 12px;
+                background: rgba(0, 0, 0, 0.1);
+                border-radius: 10px;
+            }
+
+            .flower-title {
+                font-size: 2.2rem;
+                font-weight: 800;
+                color: var(--accent-cyan);
+            }
         </style>
     </head>
     <body>
 
         <!-- Header Navigation -->
-        <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top px-4">
+        <nav class="navbar navbar-expand-lg navbar-custom sticky-top px-4">
             <div class="container-fluid">
-                <a class="navbar-brand d-flex align-items-center gap-3 fw-800 fs-3" href="#">
-                    <span>✨</span> <span style="background: linear-gradient(to right, #00f2fe, #ff007f); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">IRIS ANALYTICS PRO</span>
+                <a class="navbar-brand d-flex align-items-center gap-2 fw-800 fs-3" href="#">
+                    <span>✨</span> IRIS ANALYTICS PRO
                 </a>
                 <div class="d-flex align-items-center gap-3">
-                    <button class="btn btn-outline-light btn-sm rounded-pill px-3" onclick="toggleTheme()">🌓 Đổi Theme</button>
+                    <button class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-700" onclick="toggleTheme()">🌓 Đổi Theme (Sáng/Tối)</button>
                     <span class="badge bg-success p-2 fs-6">SVM Engine Active</span>
                 </div>
             </div>
         </nav>
 
-        <div class="container-fluid px-4 py-4">
+        <div class="container-fluid px-4 py-3">
             <!-- Navigation Tabs -->
-            <ul class="nav nav-pills mb-4 justify-content-center gap-3" id="mainTabs">
+            <ul class="nav nav-pills mb-3 justify-content-center gap-2" id="mainTabs">
                 <li class="nav-item">
-                    <button class="nav-link active" id="predict-tab" data-bs-toggle="pill" data-bs-target="#tab-predict">🔮 Bảng Dự Đoán Interactive</button>
+                    <button class="nav-link active" id="predict-tab" data-bs-toggle="pill" data-bs-target="#tab-predict">🔮 Phân Loại AI</button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link" id="library-tab" data-bs-toggle="pill" data-bs-target="#tab-library">📚 Thư Viện 3D & Sinh Học</button>
+                    <button class="nav-link" id="library-tab" data-bs-toggle="pill" data-bs-target="#tab-library">📚 Thư Viện Sinh Học</button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link" id="history-tab" data-bs-toggle="pill" data-bs-target="#tab-history">📜 Lịch Sử & Xuất Dữ Liệu</button>
+                    <button class="nav-link" id="history-tab" data-bs-toggle="pill" data-bs-target="#tab-history">📜 Lịch Sử Dự Đoán</button>
                 </li>
             </ul>
 
@@ -236,30 +229,30 @@ def home_ui():
                 
                 <!-- TAB 1: PREDICT ENGINE -->
                 <div class="tab-pane fade show active" id="tab-predict">
-                    <div class="row g-4">
-                        <!-- Input Controls (5 cols) -->
-                        <div class="col-xl-5 col-lg-6">
-                            <div class="glass-card p-4">
-                                <h4 class="fw-800 mb-3 text-warning">🎛️ Tương Tác Thông Số Hoa</h4>
+                    <div class="row g-3">
+                        <!-- Input Controls (4 cols) -->
+                        <div class="col-xl-4 col-lg-5">
+                            <div class="glass-card p-4 h-100">
+                                <h5 class="fw-800 mb-3 text-warning">🎛️ Bảng Điều Khiển Thông Số</h5>
                                 
-                                <div class="mb-4">
-                                    <label class="form-label text-sub fw-600 mb-2">Chọn mẫu thử nhanh:</label>
+                                <div class="mb-3">
+                                    <label class="form-label text-sub fw-600 small mb-1">Mẫu thử nhanh:</label>
                                     <div class="d-flex gap-2">
-                                        <button class="btn btn-outline-info flex-fill fw-700 py-2" onclick="loadPreset(5.1, 3.5, 1.4, 0.2)">🌸 Setosa</button>
-                                        <button class="btn btn-outline-warning flex-fill fw-700 py-2" onclick="loadPreset(6.0, 2.9, 4.5, 1.5)">🌺 Versicolor</button>
-                                        <button class="btn btn-outline-danger flex-fill fw-700 py-2" onclick="loadPreset(6.5, 3.0, 5.5, 2.0)">🌻 Virginica</button>
+                                        <button class="btn btn-sm btn-outline-info flex-fill fw-700 py-2" onclick="loadPreset(5.1, 3.5, 1.4, 0.2)">Setosa</button>
+                                        <button class="btn btn-sm btn-outline-warning flex-fill fw-700 py-2" onclick="loadPreset(6.0, 2.9, 4.5, 1.5)">Versicolor</button>
+                                        <button class="btn btn-sm btn-outline-danger flex-fill fw-700 py-2" onclick="loadPreset(6.5, 3.0, 5.5, 2.0)">Virginica</button>
                                     </div>
                                 </div>
 
-                                <hr class="border-secondary opacity-25 mb-4">
+                                <hr class="border-secondary opacity-25">
 
                                 <!-- Sepal Length -->
-                                <div class="mb-4">
+                                <div class="mb-3">
                                     <div class="form-label-custom mb-1">
                                         <span>Sepal Length (Dài đài hoa)</span>
-                                        <span class="text-info" id="val_sl">5.1 cm</span>
+                                        <span class="text-info fw-800" id="val_sl">5.1 cm</span>
                                     </div>
-                                    <div class="input-group mb-2">
+                                    <div class="input-group mb-1">
                                         <button class="btn btn-step" onclick="stepVal('sepal_length', -0.1)">-</button>
                                         <input type="number" class="form-control custom-input" id="sepal_length" value="5.1" step="0.1" oninput="syncSlider('sepal_length', 'range_sl', 'val_sl')">
                                         <button class="btn btn-step" onclick="stepVal('sepal_length', 0.1)">+</button>
@@ -268,12 +261,12 @@ def home_ui():
                                 </div>
 
                                 <!-- Sepal Width -->
-                                <div class="mb-4">
+                                <div class="mb-3">
                                     <div class="form-label-custom mb-1">
                                         <span>Sepal Width (Rộng đài hoa)</span>
-                                        <span class="text-info" id="val_sw">3.5 cm</span>
+                                        <span class="text-info fw-800" id="val_sw">3.5 cm</span>
                                     </div>
-                                    <div class="input-group mb-2">
+                                    <div class="input-group mb-1">
                                         <button class="btn btn-step" onclick="stepVal('sepal_width', -0.1)">-</button>
                                         <input type="number" class="form-control custom-input" id="sepal_width" value="3.5" step="0.1" oninput="syncSlider('sepal_width', 'range_sw', 'val_sw')">
                                         <button class="btn btn-step" onclick="stepVal('sepal_width', 0.1)">+</button>
@@ -282,12 +275,12 @@ def home_ui():
                                 </div>
 
                                 <!-- Petal Length -->
-                                <div class="mb-4">
+                                <div class="mb-3">
                                     <div class="form-label-custom mb-1">
                                         <span>Petal Length (Dài cánh hoa)</span>
-                                        <span class="text-info" id="val_pl">1.4 cm</span>
+                                        <span class="text-info fw-800" id="val_pl">1.4 cm</span>
                                     </div>
-                                    <div class="input-group mb-2">
+                                    <div class="input-group mb-1">
                                         <button class="btn btn-step" onclick="stepVal('petal_length', -0.1)">-</button>
                                         <input type="number" class="form-control custom-input" id="petal_length" value="1.4" step="0.1" oninput="syncSlider('petal_length', 'range_pl', 'val_pl')">
                                         <button class="btn btn-step" onclick="stepVal('petal_length', 0.1)">+</button>
@@ -296,12 +289,12 @@ def home_ui():
                                 </div>
 
                                 <!-- Petal Width -->
-                                <div class="mb-4">
+                                <div class="mb-3">
                                     <div class="form-label-custom mb-1">
                                         <span>Petal Width (Rộng cánh hoa)</span>
-                                        <span class="text-info" id="val_pw">0.2 cm</span>
+                                        <span class="text-info fw-800" id="val_pw">0.2 cm</span>
                                     </div>
-                                    <div class="input-group mb-2">
+                                    <div class="input-group mb-1">
                                         <button class="btn btn-step" onclick="stepVal('petal_width', -0.1)">-</button>
                                         <input type="number" class="form-control custom-input" id="petal_width" value="0.2" step="0.1" oninput="syncSlider('petal_width', 'range_pw', 'val_pw')">
                                         <button class="btn btn-step" onclick="stepVal('petal_width', 0.1)">+</button>
@@ -315,70 +308,104 @@ def home_ui():
                             </div>
                         </div>
 
-                        <!-- Result Display (7 cols) -->
-                        <div class="col-xl-7 col-lg-6">
+                        <!-- Result Display (8 cols) -->
+                        <div class="col-xl-8 col-lg-7">
                             <div class="glass-card p-4 h-100">
                                 <div id="placeholderText" class="text-center py-5 my-auto">
-                                    <div class="display-1 mb-3">🌿</div>
-                                    <h3 class="fw-700">Chờ lệnh phân tích...</h3>
-                                    <p class="text-sub fs-5">Hãy thay đổi thông số ở bảng bên trái hoặc nhấn nút Phân Tích.</p>
+                                    <div class="display-1 mb-3">📊</div>
+                                    <h3 class="fw-700">Đang chờ thông số đầu vào...</h3>
+                                    <p class="text-sub fs-5">Hãy nhập số liệu bên trái để xem kết quả toàn diện.</p>
                                 </div>
 
                                 <div id="resultSection" style="display: none;">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <div>
-                                            <span id="flowerBadge" class="badge bg-warning text-dark fs-6 mb-2"></span>
-                                            <h1 id="flowerName" class="flower-title text-uppercase m-0" style="color: var(--accent-cyan);"></h1>
+                                            <span id="flowerBadge" class="badge bg-warning text-dark fs-6 mb-1"></span>
+                                            <h1 id="flowerName" class="flower-title text-uppercase m-0"></h1>
                                         </div>
                                     </div>
 
-                                    <div class="row g-4">
+                                    <div class="row g-3">
+                                        <!-- Cột Trái: Ảnh lớn + Mô tả -->
                                         <div class="col-md-6">
-                                            <div class="img-box mb-3">
+                                            <div class="img-box-large mb-3">
                                                 <img id="flowerImg" src="" alt="Specimen Image">
                                             </div>
-                                            <p id="flowerDesc" class="text-large text-sub mb-0"></p>
-                                        </div>
-
-                                        <div class="col-md-6">
-                                            <h5 class="fw-800 text-warning mb-3">Xác Suất Nhận Diện (Confidence)</h5>
-                                            
-                                            <div class="mb-3">
-                                                <div class="d-flex justify-content-between fw-700 mb-1 fs-6">
-                                                    <span>Iris Setosa</span>
-                                                    <span id="probSetosa" class="text-info">0%</span>
-                                                </div>
-                                                <div class="progress progress-custom">
-                                                    <div id="barSetosa" class="progress-bar bg-info progress-bar-striped progress-bar-animated" style="width: 0%"></div>
-                                                </div>
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <div class="d-flex justify-content-between fw-700 mb-1 fs-6">
-                                                    <span>Iris Versicolor</span>
-                                                    <span id="probVersicolor" class="text-warning">0%</span>
-                                                </div>
-                                                <div class="progress progress-custom">
-                                                    <div id="barVersicolor" class="progress-bar bg-warning progress-bar-striped progress-bar-animated" style="width: 0%"></div>
-                                                </div>
-                                            </div>
-
-                                            <div class="mb-4">
-                                                <div class="d-flex justify-content-between fw-700 mb-1 fs-6">
-                                                    <span>Iris Virginica</span>
-                                                    <span id="probVirginica" style="color:#ff007f;">0%</span>
-                                                </div>
-                                                <div class="progress progress-custom">
-                                                    <div id="barVirginica" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%; background-color: #ff007f;"></div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Biểu đồ Radar so sánh -->
-                                            <h5 class="fw-800 text-warning mb-2">Biểu Đồ Hình Học (Radar Chart)</h5>
-                                            <div style="height: 180px; position: relative;">
-                                                <canvas id="radarChart"></canvas>
+                                            <div class="stat-box mb-2">
+                                                <small class="text-sub d-block fw-600">Đặc điểm hình thái:</small>
+                                                <span id="flowerDesc" class="fw-600 text-main fs-6"></span>
                                             </div>
                                         </div>
+
+                                        <!-- Cột Phải: Xác suất + Biểu đồ + Metrics Widget -->
+                                        <div class="col-md-6 d-flex flex-column justify-content-between">
+                                            <div>
+                                                <h6 class="fw-800 text-warning mb-2">Xác Suất Nhận Diện (Confidence)</h6>
+                                                
+                                                <div class="mb-2">
+                                                    <div class="d-flex justify-content-between fw-700 mb-1 small">
+                                                        <span>Iris Setosa</span>
+                                                        <span id="probSetosa" class="text-info">0%</span>
+                                                    </div>
+                                                    <div class="progress progress-custom">
+                                                        <div id="barSetosa" class="progress-bar bg-info" style="width: 0%"></div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="mb-2">
+                                                    <div class="d-flex justify-content-between fw-700 mb-1 small">
+                                                        <span>Iris Versicolor</span>
+                                                        <span id="probVersicolor" class="text-warning">0%</span>
+                                                    </div>
+                                                    <div class="progress progress-custom">
+                                                        <div id="barVersicolor" class="progress-bar bg-warning" style="width: 0%"></div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <div class="d-flex justify-content-between fw-700 mb-1 small">
+                                                        <span>Iris Virginica</span>
+                                                        <span id="probVirginica" style="color:#ff007f;">0%</span>
+                                                    </div>
+                                                    <div class="progress progress-custom">
+                                                        <div id="barVirginica" class="progress-bar" style="width: 0%; background-color: #ff007f;"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Phóng to Biểu đồ Radar -->
+                                            <div>
+                                                <h6 class="fw-800 text-warning mb-1">Biểu Đồ Radar Khung Hình Học</h6>
+                                                <div style="height: 190px; position: relative;">
+                                                    <canvas id="radarChart"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- HÀNG BỔ SUNG LẤP KHOẢNG TRỐNG: Metrics Dashboard -->
+                                        <div class="col-12 mt-3">
+                                            <div class="row g-2">
+                                                <div class="col-md-4">
+                                                    <div class="stat-box text-center">
+                                                        <small class="text-sub d-block">Tỷ lệ Cánh hoa (Length/Width)</small>
+                                                        <span id="metricPetalRatio" class="fs-5 fw-800 text-info">--</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="stat-box text-center">
+                                                        <small class="text-sub d-block">Diện tích Cánh hoa ước tính</small>
+                                                        <span id="metricPetalArea" class="fs-5 fw-800 text-warning">--</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="stat-box text-center">
+                                                        <small class="text-sub d-block">Môi trường sống chủ yếu</small>
+                                                        <span id="habitatVal" class="fs-6 fw-700 text-main">--</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                     </div>
                                 </div>
                             </div>
@@ -424,7 +451,7 @@ def home_ui():
                             </div>
                         </div>
                         <div class="table-responsive">
-                            <table class="table table-dark table-hover align-middle fs-6">
+                            <table class="table table-hover align-middle fs-6">
                                 <thead>
                                     <tr>
                                         <th>#</th>
@@ -454,8 +481,16 @@ def home_ui():
             let radarChart = null;
 
             function toggleTheme() {
-                const currentTheme = document.documentElement.getAttribute('data-bs-theme');
-                document.documentElement.setAttribute('data-bs-theme', currentTheme === 'dark' ? 'light' : 'dark');
+                const html = document.documentElement;
+                const currentTheme = html.getAttribute('data-bs-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                html.setAttribute('data-bs-theme', newTheme);
+                
+                // Cập nhật lại màu sắc biểu đồ Radar tương thích với theme mới
+                if (radarChart) {
+                    const lastData = radarChart.data.datasets[0].data;
+                    renderRadarChart(lastData);
+                }
             }
 
             function syncSlider(inputId, sliderId, labelId) {
@@ -519,6 +554,13 @@ def home_ui():
                     document.getElementById('flowerBadge').innerText = result.info.badge;
                     document.getElementById('flowerImg').src = result.info.img;
                     document.getElementById('flowerDesc').innerText = result.info.desc;
+                    document.getElementById('habitatVal').innerText = result.info.habitat;
+
+                    // Tính toán chỉ số hình học phụ lấp khoảng trống
+                    const ratio = (pl / pw).toFixed(2);
+                    const area = (pl * pw).toFixed(2);
+                    document.getElementById('metricPetalRatio').innerText = ratio + ' x';
+                    document.getElementById('metricPetalArea').innerText = area + ' cm²';
 
                     // Update Probabilities
                     const probs = result.info.probs;
@@ -545,6 +587,11 @@ def home_ui():
 
             function renderRadarChart(dataPoints) {
                 const ctx = document.getElementById('radarChart').getContext('2d');
+                const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+                
+                const gridColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)';
+                const labelColor = isDark ? '#cbd5e1' : '#1e293b';
+
                 if (radarChart) radarChart.destroy();
 
                 radarChart = new Chart(ctx, {
@@ -554,8 +601,8 @@ def home_ui():
                         datasets: [{
                             label: 'Thông Số Nhập',
                             data: dataPoints,
-                            backgroundColor: 'rgba(0, 242, 254, 0.3)',
-                            borderColor: '#00f2fe',
+                            backgroundColor: isDark ? 'rgba(0, 242, 254, 0.35)' : 'rgba(2, 132, 199, 0.25)',
+                            borderColor: isDark ? '#00f2fe' : '#0284c7',
                             borderWidth: 2,
                             pointBackgroundColor: '#ff007f'
                         }]
@@ -565,9 +612,9 @@ def home_ui():
                         maintainAspectRatio: false,
                         scales: {
                             r: {
-                                angleLines: { color: 'rgba(255,255,255,0.2)' },
-                                grid: { color: 'rgba(255,255,255,0.2)' },
-                                pointLabels: { color: '#cbd5e1', font: { size: 11, weight: 'bold' } },
+                                angleLines: { color: gridColor },
+                                grid: { color: gridColor },
+                                pointLabels: { color: labelColor, font: { size: 11, weight: 'bold' } },
                                 ticks: { display: false }
                             }
                         },
