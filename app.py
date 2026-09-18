@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-import joblib
+import joblib 
 
 # Nạp mô hình SVM đã huấn luyện
 model = joblib.load("svm_model.pkl") 
