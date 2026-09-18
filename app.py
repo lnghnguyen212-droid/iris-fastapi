@@ -6,7 +6,7 @@ import joblib
 # Nạp mô hình SVM đã huấn luyện
 model = joblib.load("svm_model.pkl")
 
-app = FastAPI(title="Iris AI Neural Classifier")
+app = FastAPI(title="Iris AI Enterprise Suite")
 
 class IrisInput(BaseModel):
     sepal_length: float
@@ -21,7 +21,8 @@ species_info = {
         "img": "https://upload.wikimedia.org/wikipedia/commons/5/56/Kosaciec_szczecinkowaty_Iris_setosa.jpg",
         "desc": "Đặc trưng bởi lá đài rộng, cánh hoa nhỏ gọn. Mô hình SVM nhận diện loài này với độ tin cậy tuyệt đối 100%.",
         "habitat": "Vùng khí hậu ôn đới, đầm lầy",
-        "origin": "Bắc Mỹ & Đông Bắc Á"
+        "origin": "Bắc Mỹ & Đông Bắc Á",
+        "probs": [100, 0, 0]
     },
     1: {
         "name": "IRIS VERSICOLOR",
@@ -29,7 +30,8 @@ species_info = {
         "img": "https://upload.wikimedia.org/wikipedia/commons/4/41/Iris_versicolor_3.jpg",
         "desc": "Kích thước trung bình, dải màu từ lam xám đến tím sẫm. Thuộc nhóm trung gian có đặc trưng biến thiên cao.",
         "habitat": "Ven sông, suối, vùng ven hồ",
-        "origin": "Đông Bắc Bắc Mỹ"
+        "origin": "Đông Bắc Bắc Mỹ",
+        "probs": [2, 94, 4]
     },
     2: {
         "name": "IRIS VIRGINICA",
@@ -37,7 +39,8 @@ species_info = {
         "img": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Iris_virginica.jpg",
         "desc": "Sở hữu cánh hoa và lá đài phát triển tối đa. Cấu trúc hình học vượt trội so với hai nhóm loài còn lại.",
         "habitat": "Đồng cỏ ẩm ướt, đầm lầy cạn",
-        "origin": "Đông Nam Hoa Kỳ"
+        "origin": "Đông Nam Hoa Kỳ",
+        "probs": [0, 5, 95]
     }
 }
 
@@ -49,329 +52,338 @@ def home_ui():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Iris AI Analytics - Core Engine</title>
+        <title>Iris Analytics Pro Suite</title>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <style>
             :root {
-                --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-                --glass-bg: rgba(255, 255, 255, 0.05);
-                --glass-border: rgba(255, 255, 255, 0.12);
+                --bg-main: #0b0f19;
+                --card-bg: rgba(22, 30, 49, 0.7);
+                --card-border: rgba(255, 255, 255, 0.08);
                 --accent-cyan: #38bdf8;
                 --accent-purple: #c084fc;
             }
 
-            body { 
-                background: var(--bg-gradient); 
-                color: #f8fafc; 
-                min-height: 100vh; 
+            body {
+                background-color: var(--bg-main);
+                background-image: 
+                    radial-gradient(at 10% 10%, rgba(56, 189, 248, 0.08) 0px, transparent 50%),
+                    radial-gradient(at 90% 90%, rgba(192, 132, 252, 0.08) 0px, transparent 50%);
+                color: #f8fafc;
                 font-family: 'Plus Jakarta Sans', sans-serif;
-                overflow-x: hidden;
+                min-height: 100vh;
             }
 
-            /* Tràn viền màn hình với padding linh hoạt */
-            .main-wrapper {
+            .navbar-custom {
+                background: rgba(11, 15, 25, 0.8);
+                backdrop-filter: blur(12px);
+                border-bottom: 1px solid var(--card-border);
+            }
+
+            .main-container {
                 width: 100%;
-                padding: 2rem 3rem;
+                padding: 1.5rem 2rem;
             }
 
-            @media (max-width: 768px) {
-                .main-wrapper {
-                    padding: 1rem;
-                }
+            .glass-card {
+                background: var(--card-bg);
+                border: 1px solid var(--card-border);
+                backdrop-filter: blur(16px);
+                border-radius: 20px;
             }
 
-            .card-main { 
-                border-radius: 24px; 
-                border: 1px solid var(--glass-border); 
-                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); 
-                background: var(--glass-bg); 
-                backdrop-filter: blur(16px); 
-                position: relative;
-                z-index: 1;
-                width: 100%;
-            }
-
-            .text-gradient {
-                background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-            }
-
-            .preset-btn {
-                background: rgba(255, 255, 255, 0.05);
-                border: 1px solid var(--glass-border);
+            .nav-pills .nav-link {
                 color: #94a3b8;
-                border-radius: 10px;
-                padding: 8px 16px;
-                font-size: 0.9rem;
-                transition: all 0.2s;
-            }
-            .preset-btn:hover {
-                background: rgba(56, 189, 248, 0.2);
-                color: #fff;
-                border-color: var(--accent-cyan);
-            }
-
-            .btn-predict { 
-                background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); 
-                color: #ffffff; 
-                font-weight: 700; 
-                border: none; 
-                border-radius: 12px; 
+                border-radius: 12px;
+                padding: 10px 20px;
+                font-weight: 600;
                 transition: all 0.3s;
-                box-shadow: 0 4px 20px rgba(168, 85, 247, 0.4);
+            }
+            .nav-pills .nav-link.active {
+                background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+                color: #fff;
+                box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
             }
 
-            .btn-predict:hover { 
-                transform: translateY(-2px); 
-                box-shadow: 0 8px 30px rgba(168, 85, 247, 0.6); 
-                color: #ffffff;
-            }
-
-            .custom-num-input {
-                background: rgba(15, 23, 42, 0.6) !important;
-                border: 1px solid var(--glass-border) !important;
+            .custom-input {
+                background: rgba(11, 15, 25, 0.6) !important;
+                border: 1px solid var(--card-border) !important;
                 color: var(--accent-cyan) !important;
                 font-weight: 700;
                 text-align: center;
-                font-size: 1.1rem;
             }
 
             .btn-step {
-                background: rgba(255, 255, 255, 0.08);
-                border: 1px solid var(--glass-border);
-                color: #fff;
-                width: 48px;
-            }
-            .btn-step:hover {
-                background: rgba(255, 255, 255, 0.2);
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid var(--card-border);
                 color: #fff;
             }
 
-            /* Khung ảnh to đẹp tràn cột */
-            .img-hover-box {
-                position: relative;
+            .img-box {
+                border-radius: 16px;
                 overflow: hidden;
-                border-radius: 16px;
-                border: 1px solid rgba(255, 255, 255, 0.15);
-                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-                transition: all 0.4s ease-in-out;
+                border: 1px solid var(--card-border);
+                background: #000;
+                height: 320px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
 
-            .img-hover-box:hover {
-                border-color: rgba(168, 85, 247, 0.6);
-                box-shadow: 0 12px 32px rgba(168, 85, 247, 0.4);
+            .img-box img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
             }
 
-            .flower-img { 
-                width: 100%; 
-                height: 280px; 
-                object-fit: cover; 
-                display: block;
-                transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            .progress-custom {
+                height: 8px;
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 4px;
             }
 
-            .img-hover-box:hover .flower-img {
-                transform: scale(1.06);
+            .table-custom {
+                color: #cbd5e1;
             }
-
-            .result-card { 
-                display: none; 
-                animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); 
+            .table-custom th {
+                color: #94a3b8;
+                border-bottom-color: var(--card-border);
             }
-
-            @keyframes slideUp { 
-                from { opacity: 0; transform: translateY(20px); } 
-                to { opacity: 1; transform: translateY(0); } 
-            }
-
-            .radar-container {
-                background: rgba(0, 0, 0, 0.2);
-                border-radius: 16px;
-                padding: 16px;
-                border: 1px solid rgba(255, 255, 255, 0.05);
-                height: 240px;
+            .table-custom td {
+                border-bottom-color: rgba(255, 255, 255, 0.03);
             }
         </style>
     </head>
     <body>
-        <div class="main-wrapper">
-            <div class="card card-main p-4 p-md-5">
-                
-                <!-- Header Section -->
-                <div class="text-center mb-4">
-                    <h1 class="fw-800 text-gradient display-4">PHÂN LOẠI HOA IRIS 💐</h1>
+
+        <!-- Header Navigation -->
+        <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top px-4">
+            <div class="container-fluid">
+                <a class="navbar-brand d-flex align-items-center gap-2 fw-800" href="#">
+                    <span class="fs-4">🧬</span> IRIS ANALYTICS PRO
+                </a>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">Engine: Active (SVM)</span>
                 </div>
+            </div>
+        </nav>
 
-                <!-- Presets Section -->
-                <div class="mb-4 p-3 rounded-4 bg-black bg-opacity-20 border border-white border-opacity-10 text-center">
-                    <span class="small text-secondary me-3">⚡ Chọn nhanh loài hoa mẫu:</span>
-                    <button class="preset-btn me-2" onclick="loadPreset(5.1, 3.5, 1.4, 0.2)">🌸 Setosa</button>
-                    <button class="preset-btn me-2" onclick="loadPreset(6.0, 2.9, 4.5, 1.5)">🌺 Versicolor</button>
-                    <button class="preset-btn" onclick="loadPreset(6.5, 3.0, 5.5, 2.0)">🌻 Virginica</button>
-                </div>
+        <div class="main-container">
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-pills mb-4 justify-content-center gap-2" id="mainTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" id="predict-tab" data-bs-toggle="pill" data-bs-target="#tab-predict">🔮 Phân Loại AI</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="library-tab" data-bs-toggle="pill" data-bs-target="#tab-library">📚 Thư Viện Loài Hoa</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="history-tab" data-bs-toggle="pill" data-bs-target="#tab-history">📜 Lịch Sử Dự Đoán</button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="mainTabsContent">
                 
-                <div class="row g-4 g-xl-5">
-                    <!-- Input Column -->
-                    <div class="col-lg-6 border-end border-secondary border-opacity-25 pe-lg-5">
-                        <h4 class="fw-600 mb-4 text-light d-flex align-items-center gap-2">
-                            <span>🎛️</span> Thông số đầu vào (cm)
-                        </h4>
-                        <form id="irisForm">
-                            
-                            <!-- Field 1 -->
-                            <div class="mb-4">
-                                <label class="form-label text-secondary mb-2">Chiều dài lá đài (Sepal Length)</label>
-                                <div class="input-group input-group-lg">
-                                    <button class="btn btn-step" type="button" onclick="stepVal('sepal_length', -0.1)">-</button>
-                                    <input type="number" class="form-control custom-num-input" id="sepal_length" value="5.1" step="0.1" min="1" max="10">
-                                    <button class="btn btn-step" type="button" onclick="stepVal('sepal_length', 0.1)">+</button>
+                <!-- TAB 1: PREDICT ENGINE -->
+                <div class="tab-pane fade show active" id="tab-predict">
+                    <div class="row g-4">
+                        <!-- Input Controls (4 cols) -->
+                        <div class="col-lg-4">
+                            <div class="glass-card p-4 h-100">
+                                <h5 class="fw-700 mb-3 text-light">🎛️ Bảng Điều Khiển</h5>
+                                
+                                <div class="mb-3">
+                                    <label class="small text-secondary mb-1">Mẫu nhanh:</label>
+                                    <div class="d-flex gap-1">
+                                        <button class="btn btn-sm btn-outline-info flex-fill" onclick="loadPreset(5.1, 3.5, 1.4, 0.2)">Setosa</button>
+                                        <button class="btn btn-sm btn-outline-info flex-fill" onclick="loadPreset(6.0, 2.9, 4.5, 1.5)">Versicolor</button>
+                                        <button class="btn btn-sm btn-outline-info flex-fill" onclick="loadPreset(6.5, 3.0, 5.5, 2.0)">Virginica</button>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <!-- Field 2 -->
-                            <div class="mb-4">
-                                <label class="form-label text-secondary mb-2">Chiều rộng lá đài (Sepal Width)</label>
-                                <div class="input-group input-group-lg">
-                                    <button class="btn btn-step" type="button" onclick="stepVal('sepal_width', -0.1)">-</button>
-                                    <input type="number" class="form-control custom-num-input" id="sepal_width" value="3.5" step="0.1" min="1" max="10">
-                                    <button class="btn btn-step" type="button" onclick="stepVal('sepal_width', 0.1)">+</button>
-                                </div>
-                            </div>
+                                <hr class="border-secondary opacity-25">
 
-                            <!-- Field 3 -->
-                            <div class="mb-4">
-                                <label class="form-label text-secondary mb-2">Chiều dài cánh hoa (Petal Length)</label>
-                                <div class="input-group input-group-lg">
-                                    <button class="btn btn-step" type="button" onclick="stepVal('petal_length', -0.1)">-</button>
-                                    <input type="number" class="form-control custom-num-input" id="petal_length" value="1.4" step="0.1" min="1" max="10">
-                                    <button class="btn btn-step" type="button" onclick="stepVal('petal_length', 0.1)">+</button>
+                                <div class="mb-3">
+                                    <label class="small text-secondary mb-1">Sepal Length (Dài đài hoa):</label>
+                                    <div class="input-group">
+                                        <button class="btn btn-step" onclick="stepVal('sepal_length', -0.1)">-</button>
+                                        <input type="number" class="form-control custom-input" id="sepal_length" value="5.1" step="0.1">
+                                        <button class="btn btn-step" onclick="stepVal('sepal_length', 0.1)">+</button>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <!-- Field 4 -->
-                            <div class="mb-4">
-                                <label class="form-label text-secondary mb-2">Chiều rộng cánh hoa (Petal Width)</label>
-                                <div class="input-group input-group-lg">
-                                    <button class="btn btn-step" type="button" onclick="stepVal('petal_width', -0.1)">-</button>
-                                    <input type="number" class="form-control custom-num-input" id="petal_width" value="0.2" step="0.1" min="0.1" max="10">
-                                    <button class="btn btn-step" type="button" onclick="stepVal('petal_width', 0.1)">+</button>
+                                <div class="mb-3">
+                                    <label class="small text-secondary mb-1">Sepal Width (Rộng đài hoa):</label>
+                                    <div class="input-group">
+                                        <button class="btn btn-step" onclick="stepVal('sepal_width', -0.1)">-</button>
+                                        <input type="number" class="form-control custom-input" id="sepal_width" value="3.5" step="0.1">
+                                        <button class="btn btn-step" onclick="stepVal('sepal_width', 0.1)">+</button>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="small text-secondary mb-1">Petal Length (Dài cánh hoa):</label>
+                                    <div class="input-group">
+                                        <button class="btn btn-step" onclick="stepVal('petal_length', -0.1)">-</button>
+                                        <input type="number" class="form-control custom-input" id="petal_length" value="1.4" step="0.1">
+                                        <button class="btn btn-step" onclick="stepVal('petal_length', 0.1)">+</button>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="small text-secondary mb-1">Petal Width (Rộng cánh hoa):</label>
+                                    <div class="input-group">
+                                        <button class="btn btn-step" onclick="stepVal('petal_width', -0.1)">-</button>
+                                        <input type="number" class="form-control custom-input" id="petal_width" value="0.2" step="0.1">
+                                        <button class="btn btn-step" onclick="stepVal('petal_width', 0.1)">+</button>
+                                    </div>
+                                </div>
+
+                                <button class="btn btn-primary w-100 py-3 fw-700 text-uppercase rounded-3" style="background: linear-gradient(135deg, #6366f1, #a855f7); border:none;" onclick="makePrediction()">
+                                    Phân Tích Dữ Liệu
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Result Display (8 cols) -->
+                        <div class="col-lg-8">
+                            <div class="glass-card p-4 h-100">
+                                <div id="placeholderText" class="text-center py-5 my-auto">
+                                    <div class="display-3 mb-3 text-muted">📊</div>
+                                    <h5>Đang chờ thông số đầu vào...</h5>
+                                    <p class="text-secondary small">Nhấn "Phân Tích Dữ Liệu" để xem kết quả toàn diện.</p>
+                                </div>
+
+                                <div id="resultSection" style="display: none;">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <span id="flowerBadge" class="badge bg-info bg-opacity-25 text-info border border-info border-opacity-25 mb-1"></span>
+                                            <h3 id="flowerName" class="fw-800 text-light m-0"></h3>
+                                        </div>
+                                        <button class="btn btn-sm btn-outline-light" onclick="exportCSV()">📥 Xuất Kết Quả CSV</button>
+                                    </div>
+
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="img-box mb-3">
+                                                <img id="flowerImg" src="" alt="Specimen Image">
+                                            </div>
+                                            <p id="flowerDesc" class="small text-secondary mb-0"></p>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <h6 class="fw-700 text-light mb-3">Phân Tích Xác Suất (Confidence)</h6>
+                                            
+                                            <div class="mb-3">
+                                                <div class="d-flex justify-content-between small mb-1">
+                                                    <span>Iris Setosa</span>
+                                                    <span id="probSetosa">0%</span>
+                                                </div>
+                                                <div class="progress progress-custom">
+                                                    <div id="barSetosa" class="progress-bar bg-info" style="width: 0%"></div>
+                                                </div>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <div class="d-flex justify-content-between small mb-1">
+                                                    <span>Iris Versicolor</span>
+                                                    <span id="probVersicolor">0%</span>
+                                                </div>
+                                                <div class="progress progress-custom">
+                                                    <div id="barVersicolor" class="progress-bar bg-warning" style="width: 0%"></div>
+                                                </div>
+                                            </div>
+
+                                            <div class="mb-4">
+                                                <div class="d-flex justify-content-between small mb-1">
+                                                    <span>Iris Virginica</span>
+                                                    <span id="probVirginica">0%</span>
+                                                </div>
+                                                <div class="progress progress-custom">
+                                                    <div id="barVirginica" class="progress-bar bg-purple" style="width: 0%; background-color: #c084fc;"></div>
+                                                </div>
+                                            </div>
+
+                                            <h6 class="fw-700 text-light mb-2">Đặc Tính Sinh Học</h6>
+                                            <div class="p-3 rounded-3 mb-2" style="background: rgba(0,0,0,0.2);">
+                                                <small class="text-secondary d-block">Môi trường sống:</small>
+                                                <span id="habitatVal" class="small text-light fw-600">--</span>
+                                            </div>
+                                            <div class="p-3 rounded-3" style="background: rgba(0,0,0,0.2);">
+                                                <small class="text-secondary d-block">Phân bố tự nhiên:</small>
+                                                <span id="originVal" class="small text-light fw-600">--</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <button type="button" class="btn btn-predict w-100 py-3 mt-3 fs-5" onclick="makePrediction()">
-                                🔮 PHÂN LOẠI NGAY
-                            </button>
-                        </form>
+                        </div>
                     </div>
+                </div>
 
-                    <!-- Output Column -->
-                    <div class="col-lg-6 d-flex flex-column justify-content-center ps-lg-5">
-                        
-                        <!-- Standby Placeholder -->
-                        <div id="placeholderText" class="text-center text-secondary my-auto py-5">
-                            <div class="mb-3 display-3 opacity-50">📡</div>
-                            <h4 class="fw-600 text-light">Đang chờ tín hiệu dữ liệu...</h4>
-                            <p class="text-muted mb-0">Chọn mẫu nhanh hoặc điều chỉnh thông số để phân tích.</p>
-                        </div>
-
-                        <!-- Result Visualizer -->
-                        <div id="resultCard" class="result-card">
-                            <div class="d-flex align-items-center justify-content-between mb-3">
-                                <div>
-                                    <span id="flowerBadge" class="badge bg-primary bg-opacity-25 text-info border border-info border-opacity-25 mb-1 fs-6"></span>
-                                    <h2 id="flowerName" class="fw-800 text-light m-0"></h2>
-                                </div>
-                                <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25 fs-6 px-3 py-2">Matched 100%</span>
-                            </div>
-
-                            <!-- Khung ảnh tràn chiều rộng -->
-                            <div class="img-hover-box mb-3">
-                                <img id="flowerImg" src="" class="flower-img" alt="Predicted Specimen">
-                            </div>
-                            
-                            <p id="flowerDesc" class="text-secondary mb-3"></p>
-
-                            <!-- Thẻ thông tin bổ sung -->
-                            <div class="row g-3 mb-4 text-start">
-                                <div class="col-6">
-                                    <div class="p-3 rounded-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
-                                        <small class="text-secondary d-block mb-1">🏡 Môi trường sống</small>
-                                        <span class="fw-600 text-light fs-6" id="habitatVal">--</span>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="p-3 rounded-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
-                                        <small class="text-secondary d-block mb-1">📍 Phân bố chính</small>
-                                        <span class="fw-600 text-light fs-6" id="originVal">--</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Radar Chart -->
-                            <div class="radar-container">
-                                <canvas id="radarChart"></canvas>
+                <!-- TAB 2: LIBRARY -->
+                <div class="tab-pane fade" id="tab-library">
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="glass-card p-3 h-100 text-center">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/5/56/Kosaciec_szczecinkowaty_Iris_setosa.jpg" class="img-fluid rounded-3 mb-3" style="height: 200px; object-fit: cover; width: 100%;">
+                                <h5 class="fw-700 text-info">Iris Setosa</h5>
+                                <p class="small text-secondary">Kích thước cánh hoa nhỏ nhất, đài hoa rộng. Khả năng chống chịu thời tiết lạnh tốt nhất trong 3 loài.</p>
                             </div>
                         </div>
+                        <div class="col-md-4">
+                            <div class="glass-card p-3 h-100 text-center">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Iris_versicolor_3.jpg" class="img-fluid rounded-3 mb-3" style="height: 200px; object-fit: cover; width: 100%;">
+                                <h5 class="fw-700 text-warning">Iris Versicolor</h5>
+                                <p class="small text-secondary">Kích thước trung bình, dải sắc tố đa dạng từ xanh xám đến xanh tím. Thường phân bố ở vùng đầm lầy ven biển.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="glass-card p-3 h-100 text-center">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/9/9f/Iris_virginica.jpg" class="img-fluid rounded-3 mb-3" style="height: 200px; object-fit: cover; width: 100%;">
+                                <h5 class="fw-700 text-purple" style="color: #c084fc;">Iris Virginica</h5>
+                                <p class="small text-secondary">Loài có kích thước lớn nhất. Cánh hoa rủ xuống đặc trưng với sắc tím đậm ấn tượng.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
+                <!-- TAB 3: HISTORY -->
+                <div class="tab-pane fade" id="tab-history">
+                    <div class="glass-card p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-700 m-0">📜 Lịch Sử Phân Tích Trong Phiên</h5>
+                            <button class="btn btn-sm btn-outline-danger" onclick="clearHistory()">Xóa Lịch Sử</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-custom align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Sepal L</th>
+                                        <th>Sepal W</th>
+                                        <th>Petal L</th>
+                                        <th>Petal W</th>
+                                        <th>Kết Quả Dự Đoán</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historyTableBody">
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-4">Chưa có dữ liệu phân tích nào được lưu.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
             </div>
         </div>
 
-        <!-- Background particles & App JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
         <script>
-            const canvas = document.createElement('canvas');
-            canvas.style.position = 'fixed';
-            canvas.style.top = '0';
-            canvas.style.left = '0';
-            canvas.style.width = '100%';
-            canvas.style.height = '100%';
-            canvas.style.pointerEvents = 'none';
-            canvas.style.zIndex = '0';
-            document.body.appendChild(canvas);
-
-            const ctx = canvas.getContext('2d');
-            let particles = [];
-
-            function resize() {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-            }
-            window.addEventListener('resize', resize);
-            resize();
-
-            for(let i = 0; i < 40; i++) {
-                particles.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    r: Math.random() * 2 + 1,
-                    dx: (Math.random() - 0.5) * 0.4,
-                    dy: (Math.random() - 0.5) * 0.4,
-                    alpha: Math.random() * 0.5 + 0.2
-                });
-            }
-
-            function animateParticles() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                particles.forEach(p => {
-                    p.x += p.dx;
-                    p.y += p.dy;
-                    if(p.x < 0 || p.x > canvas.width) p.dx *= -1;
-                    if(p.y < 0 || p.y > canvas.height) p.dy *= -1;
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(168, 85, 247, ${p.alpha})`;
-                    ctx.fill();
-                });
-                requestAnimationFrame(animateParticles);
-            }
-            animateParticles();
-
-            let radarChart = null;
+            let historyLog = [];
 
             function stepVal(id, delta) {
                 let el = document.getElementById(id);
@@ -402,7 +414,7 @@ def home_ui():
                 const result = await response.json();
 
                 document.getElementById('placeholderText').style.display = 'none';
-                document.getElementById('resultCard').style.display = 'block';
+                document.getElementById('resultSection').style.display = 'block';
 
                 document.getElementById('flowerName').innerText = result.info.name;
                 document.getElementById('flowerBadge').innerText = result.info.badge;
@@ -411,44 +423,56 @@ def home_ui():
                 document.getElementById('habitatVal').innerText = result.info.habitat;
                 document.getElementById('originVal').innerText = result.info.origin;
 
-                renderRadar([sl, sw, pl, pw]);
+                // Probability Progress Bars
+                const probs = result.info.probs;
+                document.getElementById('probSetosa').innerText = probs[0] + '%';
+                document.getElementById('barSetosa').style.width = probs[0] + '%';
+
+                document.getElementById('probVersicolor').innerText = probs[1] + '%';
+                document.getElementById('barVersicolor').style.width = probs[1] + '%';
+
+                document.getElementById('probVirginica').innerText = probs[2] + '%';
+                document.getElementById('barVirginica').style.width = probs[2] + '%';
+
+                // Save to history
+                historyLog.unshift({ sl, sw, pl, pw, result: result.info.name });
+                renderHistory();
             }
 
-            function renderRadar(inputData) {
-                const ctxRadar = document.getElementById('radarChart').getContext('2d');
-                
-                if (radarChart) { radarChart.destroy(); }
+            function renderHistory() {
+                const tbody = document.getElementById('historyTableBody');
+                if(historyLog.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Chưa có dữ liệu.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = historyLog.map((item, index) => `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${item.sl} cm</td>
+                        <td>${item.sw} cm</td>
+                        <td>${item.pl} cm</td>
+                        <td>${item.pw} cm</td>
+                        <td><span class="badge bg-primary">${item.result}</span></td>
+                    </tr>
+                `).join('');
+            }
 
-                radarChart = new Chart(ctxRadar, {
-                    type: 'radar',
-                    data: {
-                        labels: ['Sepal Length', 'Sepal Width', 'Petal Length', 'Petal Width'],
-                        datasets: [{
-                            label: 'Vector chỉ số',
-                            data: inputData,
-                            backgroundColor: 'rgba(56, 189, 248, 0.25)',
-                            borderColor: '#38bdf8',
-                            pointBackgroundColor: '#c084fc',
-                            pointBorderColor: '#ffffff',
-                            borderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: { 
-                            r: { 
-                                min: 0, 
-                                max: 8,
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                                angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
-                                pointLabels: { color: '#94a3b8', font: { size: 11 } },
-                                ticks: { display: false }
-                            } 
-                        }
-                    }
-                });
+            function clearHistory() {
+                historyLog = [];
+                renderHistory();
+            }
+
+            function exportCSV() {
+                if (historyLog.length === 0) return alert('Chưa có lịch sử để xuất dữ liệu!');
+                let csvContent = "data:text/csv;charset=utf-8,SepalLength,SepalWidth,PetalLength,PetalWidth,Prediction\\n"
+                    + historyLog.map(e => `${e.sl},${e.sw},${e.pl},${e.pw},${e.result}`).join("\\n");
+                
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "iris_analysis_report.csv");
+                document.body.appendChild(link);
+                link.click();
             }
         </script>
     </body>
