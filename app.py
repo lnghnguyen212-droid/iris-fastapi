@@ -22,7 +22,7 @@ species_info = {
     0: {
         "name": "IRIS SETOSA",
         "badge": "Loài Đặc Hữu - Nhóm 01",
-        "img": "https://en.wikipedia.org/wiki/File:Irissetosa1.jpg",
+        "img": "https://en.wikipedia.org/wiki/Iris_setosa#/media/File:Irissetosa1.jpg",
         "desc": "Đặc trưng bởi lá đài rộng, cánh hoa nhỏ gọn. Mô hình SVM nhận diện loài này với độ tin cậy cao.",
         "habitat": "Vùng khí hậu ôn đới, đầm lầy",
         "origin": "Bắc Mỹ & Đông Bắc Á",
