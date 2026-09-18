@@ -449,8 +449,8 @@ def home():
                                 </div>
                                 <div class="col-md-7">
                                     <h3 id="resName" class="fw-800 text-primary mb-1">Iris setosa</h3>
-                                    <p class="text-muted small mb-2">Độ chính xác: <strong id="resAcc" class="text-success">99.2%</strong></p>
-                                    <p id="resDesc" class="small text-muted mb-0">Hoa có cánh nhỏ gọn, màu tím nhạt/xanh. Rất dễ nhận biết.</p>
+                                    <p class="text-light small mb-2">Độ chính xác: <strong id="resAcc" class="text-success">99.2%</strong></p>
+                                    <p id="resDesc" class="small text-light mb-0">Hoa có cánh nhỏ gọn, màu tím nhạt/xanh. Rất dễ nhận biết.</p>
                                 </div>
                             </div>
 
@@ -465,7 +465,7 @@ def home():
                                 </div>
                                 <div class="col-md-6">
                                     <div class="p-3 bg-dark border border-secondary border-opacity-25 rounded-3">
-                                        <small class="text-muted d-block mb-1">Bạn có biết?</small>
+                                        <small class="text-light d-block mb-1">Bạn có biết?</small>
                                         <span class="small">Hoa Iris có hơn 300 loài khác nhau và được xem là biểu tượng của sự hy vọng và trí tuệ.</span>
                                     </div>
                                 </div>
@@ -509,7 +509,7 @@ def home():
                     <div class="table-responsive">
                         <table class="table table-dark table-striped align-middle">
                             <thead>
-                                <tr class="text-muted">
+                                <tr class="text-light">
                                     <th>#</th>
                                     <th>Sepal Length</th>
                                     <th>Sepal Width</th>
@@ -538,14 +538,14 @@ def home():
                         <div class="content-card h-100">
                             <img src="https://upload.wikimedia.org/wikipedia/commons/5/56/Kosaciec_szczecinkowaty_Iris_setosa.jpg" class="rounded-3 img-fluid mb-3" style="height:180px; object-fit:cover; width:100%;">
                             <h5 class="fw-700 text-info">Iris Setosa</h5>
-                            <p class="small text-muted">Đặc điểm chính là đài hoa rộng và cánh hoa siêu nhỏ. Thường có màu xanh tím sẫm hoặc nhạt.</p>
+                            <p class="small text-light">Đặc điểm chính là đài hoa rộng và cánh hoa siêu nhỏ. Thường có màu xanh tím sẫm hoặc nhạt.</p>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="content-card h-100">
                             <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Iris_versicolor_3.jpg" class="rounded-3 img-fluid mb-3" style="height:180px; object-fit:cover; width:100%;">
                             <h5 class="fw-700 text-warning">Iris Versicolor</h5>
-                            <p class="small text-muted">Kích thước trung bình, dải màu tím lam đặc trưng kết hợp với các vệt màu vàng nhạt ở gốc cánh.</p>
+                            <p class="small text-light">Kích thước trung bình, dải màu tím lam đặc trưng kết hợp với các vệt màu vàng nhạt ở gốc cánh.</p>
                         </div>
                     </div>
                     <div class="col-md-4">
