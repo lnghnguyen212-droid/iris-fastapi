@@ -93,23 +93,12 @@ def home():
         
         <style>
             :root {
-                --bg-body: #0d1117;
-                --sidebar-bg: #161b22;
-                --card-bg: #ffffff;
-                --card-dark-bg: #1f2937;
-                --text-main: #0f172a;
-                --text-muted: #64748b;
-                --accent-purple: #6366f1;
-                --accent-hover: #4f46e5;
-                --border-color: #e2e8f0;
-            }
-
-            [data-theme="dark"] {
                 --bg-body: #0a0d14;
                 --sidebar-bg: #121621;
                 --card-bg: #1a202c;
                 --text-main: #f1f5f9;
                 --text-muted: #94a3b8;
+                --accent-purple: #6366f1;
                 --border-color: #2d3748;
             }
 
@@ -120,13 +109,12 @@ def home():
                 overflow-x: hidden;
             }
 
-            /* LAYOUT FLEX */
             .app-wrapper {
                 display: flex;
                 min-height: 100vh;
             }
 
-            /* SIDEBAR BÊN TRÁI */
+            /* SIDEBAR */
             .sidebar {
                 width: 260px;
                 background-color: var(--sidebar-bg);
@@ -166,6 +154,7 @@ def home():
                 border-radius: 12px;
                 transition: all 0.2s;
                 margin-bottom: 6px;
+                cursor: pointer;
             }
 
             .nav-item-link:hover, .nav-item-link.active {
@@ -212,9 +201,11 @@ def home():
                 box-shadow: 0 4px 20px rgba(0,0,0,0.03);
             }
 
-            /* INPUT SLIDERS */
-            .form-range::-webkit-slider-thumb {
-                background: var(--accent-purple);
+            .tab-section {
+                display: none;
+            }
+            .tab-section.active {
+                display: block;
             }
 
             /* FLOATING CHAT WIDGET */
@@ -263,12 +254,12 @@ def home():
                     <span>IrisClassifier</span>
                 </a>
                 <ul class="nav-menu">
-                    <li><a href="#" class="nav-item-link active"><i class="bi bi-house-door"></i> Trang chủ</a></li>
-                    <li><a href="#" class="nav-item-link"><i class="bi bi-cpu"></i> Phân loại hoa</a></li>
-                    <li><a href="#" class="nav-item-link"><i class="bi bi-clock-history"></i> Lịch sử phân loại</a></li>
-                    <li><a href="#" class="nav-item-link"><i class="bi bi-database"></i> Bộ dữ liệu</a></li>
-                    <li><a href="#" class="nav-item-link"><i class="bi bi-book"></i> Kiến thức</a></li>
-                    <li><a href="#" class="nav-item-link"><i class="bi bi-bar-chart"></i> Thống kê</a></li>
+                    <li><a class="nav-item-link active" onclick="switchTab('tab-home', this)"><i class="bi bi-house-door"></i> Trang chủ</a></li>
+                    <li><a class="nav-item-link" onclick="switchTab('tab-predict-section', this)"><i class="bi bi-cpu"></i> Phân loại hoa</a></li>
+                    <li><a class="nav-item-link" onclick="switchTab('tab-history', this)"><i class="bi bi-clock-history"></i> Lịch sử phân loại</a></li>
+                    <li><a class="nav-item-link" onclick="switchTab('tab-dataset', this)"><i class="bi bi-database"></i> Bộ dữ liệu</a></li>
+                    <li><a class="nav-item-link" onclick="switchTab('tab-knowledge', this)"><i class="bi bi-book"></i> Kiến thức</a></li>
+                    <li><a class="nav-item-link" onclick="switchTab('tab-stats', this)"><i class="bi bi-bar-chart"></i> Thống kê</a></li>
                 </ul>
             </div>
             <div class="p-2 text-center text-muted small">
@@ -278,100 +269,132 @@ def home():
 
         <!-- NỘI DUNG CHÍNH -->
         <main class="main-content">
-            <!-- HERO BANNER -->
-            <div class="hero-banner d-flex align-items-center">
-                <div style="max-width: 550px; z-index: 2;">
-                    <span class="badge bg-primary bg-opacity-28 text-white mb-2 px-3 py-2 rounded-pill">AI POWERED FLOWER CLASSIFICATION</span>
-                    <h1 class="fw-800 display-5 mb-3">Phân loại hoa Iris</h1>
-                    <p class="text-white-50 fs-6 mb-4">Điều chỉnh thông số hoặc tải ảnh trực tiếp, hệ thống Machine Learning sẽ tự động nhận diện loài hoa Iris với độ chính xác cao.</p>
-                    <button class="btn btn-primary rounded-pill px-4 py-2 me-2" onclick="scrollToSection('predict-area')">Bắt đầu phân loại <i class="bi bi-arrow-right"></i></button>
-                    <button class="btn btn-outline-light rounded-pill px-4 py-2">Khám phá dữ liệu</button>
+            <!-- TAB 1: TRANG CHỦ & PHÂN LOẠI -->
+            <div id="tab-home" class="tab-section active">
+                <div class="hero-banner d-flex align-items-center">
+                    <div style="max-width: 550px; z-index: 2;">
+                        <span class="badge bg-primary bg-opacity-28 text-white mb-2 px-3 py-2 rounded-pill">AI POWERED FLOWER CLASSIFICATION</span>
+                        <h1 class="fw-800 display-5 mb-3">Phân loại hoa Iris</h1>
+                        <p class="text-white-50 fs-6 mb-4">Điều chỉnh thông số hoặc sử dụng công cụ AI để nhận diện chính xác từng loài hoa Iris.</p>
+                        <button class="btn btn-primary rounded-pill px-4 py-2 me-2" onclick="switchTab('tab-predict-section', document.querySelectorAll('.nav-item-link')[1])">Bắt đầu phân loại <i class="bi bi-arrow-right"></i></button>
+                    </div>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Iris_versicolor_3.jpg" alt="Iris Banner">
                 </div>
-                <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Iris_versicolor_3.jpg" alt="Iris Banner">
             </div>
 
-            <!-- GRID KHU VỰC PHÂN TÍCH -->
-            <div class="row g-4" id="predict-area">
-                <!-- CỘT TRÁI: NHẬP THÔNG SỐ -->
-                <div class="col-lg-5">
-                    <div class="content-card h-100">
-                        <h5 class="fw-700 mb-4"><i class="bi bi-sliders me-2 text-primary"></i> Điều chỉnh kích thước</h5>
-                        
-                        <div class="mb-3">
-                            <label class="d-flex justify-content-between fw-600 mb-1">
-                                <span>Sepal Length (Dài đài)</span>
-                                <span class="text-primary fw-700" id="lbl_sl">5.1 cm</span>
-                            </label>
-                            <input type="range" class="form-range" id="sl" min="4.0" max="8.0" step="0.1" value="5.1" oninput="updateVal('sl', 'lbl_sl')">
-                        </div>
+            <!-- TAB 2: KHU VỰC DỰ ĐOÁN -->
+            <div id="tab-predict-section" class="tab-section active">
+                <div class="row g-4">
+                    <div class="col-lg-5">
+                        <div class="content-card h-100">
+                            <h5 class="fw-700 mb-4"><i class="bi bi-sliders me-2 text-primary"></i> Điều chỉnh kích thước</h5>
+                            
+                            <div class="mb-3">
+                                <label class="d-flex justify-content-between fw-600 mb-1">
+                                    <span>Sepal Length (Dài đài)</span>
+                                    <span class="text-primary fw-700" id="lbl_sl">5.1 cm</span>
+                                </label>
+                                <input type="range" class="form-range" id="sl" min="4.0" max="8.0" step="0.1" value="5.1" oninput="updateVal('sl', 'lbl_sl')">
+                            </div>
 
-                        <div class="mb-3">
-                            <label class="d-flex justify-content-between fw-600 mb-1">
-                                <span>Sepal Width (Rộng đài)</span>
-                                <span class="text-primary fw-700" id="lbl_sw">3.5 cm</span>
-                            </label>
-                            <input type="range" class="form-range" id="sw" min="2.0" max="4.5" step="0.1" value="3.5" oninput="updateVal('sw', 'lbl_sw')">
-                        </div>
+                            <div class="mb-3">
+                                <label class="d-flex justify-content-between fw-600 mb-1">
+                                    <span>Sepal Width (Rộng đài)</span>
+                                    <span class="text-primary fw-700" id="lbl_sw">3.5 cm</span>
+                                </label>
+                                <input type="range" class="form-range" id="sw" min="2.0" max="4.5" step="0.1" value="3.5" oninput="updateVal('sw', 'lbl_sw')">
+                            </div>
 
-                        <div class="mb-3">
-                            <label class="d-flex justify-content-between fw-600 mb-1">
-                                <span>Petal Length (Dài cánh)</span>
-                                <span class="text-primary fw-700" id="lbl_pl">1.4 cm</span>
-                            </label>
-                            <input type="range" class="form-range" id="pl" min="1.0" max="7.0" step="0.1" value="1.4" oninput="updateVal('pl', 'lbl_pl')">
-                        </div>
+                            <div class="mb-3">
+                                <label class="d-flex justify-content-between fw-600 mb-1">
+                                    <span>Petal Length (Dài cánh)</span>
+                                    <span class="text-primary fw-700" id="lbl_pl">1.4 cm</span>
+                                </label>
+                                <input type="range" class="form-range" id="pl" min="1.0" max="7.0" step="0.1" value="1.4" oninput="updateVal('pl', 'lbl_pl')">
+                            </div>
 
-                        <div class="mb-4">
-                            <label class="d-flex justify-content-between fw-600 mb-1">
-                                <span>Petal Width (Rộng cánh)</span>
-                                <span class="text-primary fw-700" id="lbl_pw">0.2 cm</span>
-                            </label>
-                            <input type="range" class="form-range" id="pw" min="0.1" max="2.5" step="0.1" value="0.2" oninput="updateVal('pw', 'lbl_pw')">
-                        </div>
+                            <div class="mb-4">
+                                <label class="d-flex justify-content-between fw-600 mb-1">
+                                    <span>Petal Width (Rộng cánh)</span>
+                                    <span class="text-primary fw-700" id="lbl_pw">0.2 cm</span>
+                                </label>
+                                <input type="range" class="form-range" id="pw" min="0.1" max="2.5" step="0.1" value="0.2" oninput="updateVal('pw', 'lbl_pw')">
+                            </div>
 
-                        <button class="btn btn-primary w-100 rounded-3 py-3 fw-700" onclick="runPredict()">
-                            <i class="bi bi-magic me-2"></i> Phân loại ngay
-                        </button>
+                            <button class="btn btn-primary w-100 rounded-3 py-3 fw-700" onclick="runPredict()">
+                                <i class="bi bi-magic me-2"></i> Phân loại ngay
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-7">
+                        <div class="content-card h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-700 m-0">Kết quả phân loại</h5>
+                                <span class="badge bg-success bg-opacity-25 text-success rounded-pill px-3"><i class="bi bi-check-circle me-1"></i> Đã nhận diện thành công</span>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-5">
+                                    <img id="resImg" src="https://upload.wikimedia.org/wikipedia/commons/5/56/Kosaciec_szczecinkowaty_Iris_setosa.jpg" class="img-fluid rounded-4 border w-100" style="height: 180px; object-fit: cover;">
+                                </div>
+                                <div class="col-md-7">
+                                    <h3 id="resName" class="fw-800 text-primary mb-1">Iris setosa</h3>
+                                    <p class="text-muted small mb-2">Độ chính xác: <strong id="resAcc" class="text-success">99.2%</strong></p>
+                                    <p id="resDesc" class="small text-muted mb-0">Hoa có cánh nhỏ gọn, màu tím nhạt/xanh. Rất dễ nhận biết.</p>
+                                </div>
+                            </div>
+
+                            <hr class="my-4">
+
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <h6 class="fw-700 mb-3">Biểu đồ phân bố loài</h6>
+                                    <div style="height: 140px; position: relative;">
+                                        <canvas id="donutChart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-dark border border-secondary border-opacity-25 rounded-3">
+                                        <small class="text-muted d-block mb-1">Bạn có biết?</small>
+                                        <span class="small">Hoa Iris có hơn 300 loài khác nhau và được xem là biểu tượng của sự hy vọng và trí tuệ.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- CỘT PHẢI: KẾT QUẢ DỰ ĐOÁN -->
-                <div class="col-lg-7">
-                    <div class="content-card h-100">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-700 m-0">Kết quả phân loại</h5>
-                            <span class="badge bg-success bg-opacity-25 text-success rounded-pill px-3"><i class="bi bi-check-circle me-1"></i> Đã nhận diện thành công</span>
-                        </div>
+            <!-- TAB LỊCH SỬ -->
+            <div id="tab-history" class="tab-section">
+                <div class="content-card">
+                    <h5 class="fw-700 mb-3"><i class="bi bi-clock-history me-2 text-primary"></i> Lịch sử dự đoán</h5>
+                    <p class="text-muted">Chưa có lịch sử thao tác nào gần đây.</p>
+                </div>
+            </div>
 
-                        <div class="row g-3">
-                            <div class="col-md-5">
-                                <img id="resImg" src="https://upload.wikimedia.org/wikipedia/commons/5/56/Kosaciec_szczecinkowaty_Iris_setosa.jpg" class="img-fluid rounded-4 border w-100" style="height: 180px; object-fit: cover;">
-                            </div>
-                            <div class="col-md-7">
-                                <h3 id="resName" class="fw-800 text-primary mb-1">Iris setosa</h3>
-                                <p class="text-muted small mb-2">Độ chính xác: <strong id="resAcc" class="text-success">99.2%</strong></p>
-                                <p id="resDesc" class="small text-muted mb-0">Hoa có cánh nhỏ gọn, màu tím nhạt/xanh. Rất dễ nhận biết.</p>
-                            </div>
-                        </div>
+            <!-- TAB BỘ DỮ LIỆU -->
+            <div id="tab-dataset" class="tab-section">
+                <div class="content-card">
+                    <h5 class="fw-700 mb-3"><i class="bi bi-database me-2 text-primary"></i> Bộ dữ liệu Iris</h5>
+                    <p class="text-muted">Bộ dữ liệu gồm 150 mẫu hoa Iris với 4 đặc trưng hình thái chuẩn.</p>
+                </div>
+            </div>
 
-                        <hr class="my-4">
+            <!-- TAB KIẾN THỨC -->
+            <div id="tab-knowledge" class="tab-section">
+                <div class="content-card">
+                    <h5 class="fw-700 mb-3"><i class="bi bi-book me-2 text-primary"></i> Thư viện kiến thức</h5>
+                    <p class="text-muted">Tìm hiểu về 3 nhóm hoa chuẩn: Setosa, Versicolor và Virginica.</p>
+                </div>
+            </div>
 
-                        <!-- BIỂU ĐỒ THỐNG KÊ NHANH -->
-                        <div class="row align-items-center">
-                            <div class="col-md-6">
-                                <h6 class="fw-700 mb-3">Biểu đồ phân bố loài</h6>
-                                <div style="height: 140px; position: relative;">
-                                    <canvas id="donutChart"></canvas>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="p-3 bg-body-tertiary rounded-3">
-                                    <small class="text-muted d-block mb-1">Bạn có biết?</small>
-                                    <span class="small">Hoa Iris có hơn 300 loài khác nhau và được xem là biểu tượng của sự hy vọng và trí tuệ.</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <!-- TAB THỐNG KÊ -->
+            <div id="tab-stats" class="tab-section">
+                <div class="content-card">
+                    <h5 class="fw-700 mb-3"><i class="bi bi-bar-chart me-2 text-primary"></i> Thống kê hệ thống</h5>
+                    <p class="text-muted">Tổng quan số lượt dự đoán và độ chính xác trung bình của mô hình AI.</p>
                 </div>
             </div>
         </main>
@@ -386,9 +409,9 @@ def home():
                 <button class="btn-close btn-close-white" onclick="toggleChatPopup()"></button>
             </div>
             <div class="p-3 flex-grow-1 overflow-y-auto small" id="chatContent">
-                <div class="bg-light p-2 rounded-3 text-dark mb-2">Xin chào! Bạn muốn hỏi gì về loài hoa Iris hoặc bộ dữ liệu phân loại?</div>
+                <div class="bg-dark p-2 rounded-3 text-white mb-2">Xin chào! Bạn muốn hỏi gì về loài hoa Iris hoặc bộ dữ liệu phân loại?</div>
             </div>
-            <div class="p-2 border-top d-flex gap-2">
+            <div class="p-2 border-top border-secondary border-opacity-25 d-flex gap-2">
                 <input type="text" id="chatInput" class="form-control form-control-sm" placeholder="Nhập tin nhắn..." onkeypress="if(event.key==='Enter') sendChat()">
                 <button class="btn btn-primary btn-sm" onclick="sendChat()"><i class="bi bi-send"></i></button>
             </div>
@@ -397,6 +420,25 @@ def home():
 
     <script>
         let chartInstance = null;
+
+        function switchTab(tabId, element) {
+            // Đổi active cho sidebar menu
+            document.querySelectorAll('.nav-item-link').forEach(el => el.classList.remove('active'));
+            if(element) element.classList.add('active');
+
+            // Ẩn/Hiện phần nội dung tương ứng
+            if(tabId === 'tab-home') {
+                document.getElementById('tab-home').style.display = 'block';
+                document.getElementById('tab-predict-section').style.display = 'block';
+                document.querySelectorAll('.tab-section').forEach(el => {
+                    if(el.id !== 'tab-home' && el.id !== 'tab-predict-section') el.style.display = 'none';
+                });
+            } else {
+                document.querySelectorAll('.tab-section').forEach(el => el.style.display = 'none');
+                const target = document.getElementById(tabId);
+                if(target) target.style.display = 'block';
+            }
+        }
 
         function updateVal(id, lblId) {
             const val = document.getElementById(id).value;
@@ -466,7 +508,7 @@ def home():
             });
             const data = await res.json();
 
-            box.innerHTML += `<div class="bg-light p-2 rounded-3 text-dark mb-2 me-auto" style="max-width: 80%;">${data.reply}</div>`;
+            box.innerHTML += `<div class="bg-dark text-white p-2 rounded-3 mb-2 me-auto" style="max-width: 80%;">${data.reply}</div>`;
             box.scrollTop = box.scrollHeight;
         }
 
@@ -477,9 +519,3 @@ def home():
     </body>
     </html>
     """
-
-
-
-
-
-
