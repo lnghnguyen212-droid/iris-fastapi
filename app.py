@@ -552,7 +552,7 @@ def home():
                         <div class="content-card h-100">
                             <img src="https://upload.wikimedia.org/wikipedia/commons/9/9f/Iris_virginica.jpg" class="rounded-3 img-fluid mb-3" style="height:180px; object-fit:cover; width:100%;">
                             <h5 class="fw-700 text-danger">Iris Virginica</h5>
-                            <p class="small text-muted">Dòng hoa Iris có kích thước lớn nhất trong cả 3 loại, cánh hoa dài rủ xuống ấn tượng.</p>
+                            <p class="small text-light">Dòng hoa Iris có kích thước lớn nhất trong cả 3 loại, cánh hoa dài rủ xuống ấn tượng.</p>
                         </div>
                     </div>
                 </div>
