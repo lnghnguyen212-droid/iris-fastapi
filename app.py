@@ -4,9 +4,13 @@ from pydantic import BaseModel
 import joblib
 
 # Nạp mô hình SVM đã huấn luyện
-model = joblib.load("svm_model.pkl")
+try:
+    model = joblib.load("svm_model.pkl")
+except Exception as e:
+    print(f"Lưu ý: Chưa tìm thấy file 'svm_model.pkl' hoặc lỗi nạp file: {e}")
+    model = None
 
-app = FastAPI(title="Iris AI Enterprise Suite")
+app = FastAPI(title="Iris AI Enterprise Suite Pro")
 
 class IrisInput(BaseModel):
     sepal_length: float
@@ -19,7 +23,7 @@ species_info = {
         "name": "IRIS SETOSA",
         "badge": "Loài Đặc Hữu - Nhóm 01",
         "img": "https://upload.wikimedia.org/wikipedia/commons/5/56/Kosaciec_szczecinkowaty_Iris_setosa.jpg",
-        "desc": "Đặc trưng bởi lá đài rộng, cánh hoa nhỏ gọn. Mô hình SVM nhận diện loài này với độ tin cậy tuyệt đối 100%.",
+        "desc": "Đặc trưng bởi lá đài rộng, cánh hoa nhỏ gọn. Mô hình SVM nhận diện loài này với độ tin cậy cao.",
         "habitat": "Vùng khí hậu ôn đới, đầm lầy",
         "origin": "Bắc Mỹ & Đông Bắc Á",
         "probs": [100, 0, 0]
@@ -48,111 +52,155 @@ species_info = {
 def home_ui():
     html_content = """
     <!DOCTYPE html>
-    <html lang="vi">
+    <html lang="vi" data-bs-theme="dark">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Iris Analytics Pro Suite</title>
+        <title>Iris Analytics Pro - NextGen UI</title>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <style>
             :root {
-                --bg-main: #0b0f19;
-                --card-bg: rgba(22, 30, 49, 0.7);
-                --card-border: rgba(255, 255, 255, 0.08);
-                --accent-cyan: #38bdf8;
-                --accent-purple: #c084fc;
+                --bg-main: #0a0d18;
+                --card-bg: rgba(23, 31, 56, 0.75);
+                --card-border: rgba(255, 255, 255, 0.12);
+                --accent-cyan: #00f2fe;
+                --accent-pink: #ff007f;
+                --accent-purple: #7928ca;
+                --text-main: #f8fafc;
+                --text-sub: #cbd5e1;
+            }
+
+            [data-bs-theme="light"] {
+                --bg-main: #f0f4f9;
+                --card-bg: rgba(255, 255, 255, 0.85);
+                --card-border: rgba(0, 0, 0, 0.08);
+                --text-main: #0f172a;
+                --text-sub: #475569;
             }
 
             body {
                 background-color: var(--bg-main);
                 background-image: 
-                    radial-gradient(at 10% 10%, rgba(56, 189, 248, 0.08) 0px, transparent 50%),
-                    radial-gradient(at 90% 90%, rgba(192, 132, 252, 0.08) 0px, transparent 50%);
-                color: #f8fafc;
+                    radial-gradient(circle at 15% 15%, rgba(121, 40, 202, 0.25) 0%, transparent 45%),
+                    radial-gradient(circle at 85% 85%, rgba(0, 242, 254, 0.2) 0%, transparent 45%);
+                color: var(--text-main);
                 font-family: 'Plus Jakarta Sans', sans-serif;
                 min-height: 100vh;
+                font-size: 1.05rem; /* Tăng cỡ chữ cơ bản */
             }
 
             .navbar-custom {
-                background: rgba(11, 15, 25, 0.8);
-                backdrop-filter: blur(12px);
+                background: rgba(10, 13, 24, 0.85);
+                backdrop-filter: blur(16px);
                 border-bottom: 1px solid var(--card-border);
-            }
-
-            .main-container {
-                width: 100%;
-                padding: 1.5rem 2rem;
             }
 
             .glass-card {
                 background: var(--card-bg);
                 border: 1px solid var(--card-border);
-                backdrop-filter: blur(16px);
-                border-radius: 20px;
+                backdrop-filter: blur(20px);
+                border-radius: 24px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             }
 
+            /* Cải thiện Tab Navigation */
             .nav-pills .nav-link {
-                color: #94a3b8;
-                border-radius: 12px;
-                padding: 10px 20px;
-                font-weight: 600;
-                transition: all 0.3s;
+                color: var(--text-sub);
+                border-radius: 14px;
+                padding: 12px 28px;
+                font-weight: 700;
+                font-size: 1.1rem;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             }
             .nav-pills .nav-link.active {
-                background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+                background: linear-gradient(135deg, #7928ca 0%, #ff007f 100%);
                 color: #fff;
-                box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+                box-shadow: 0 0 20px rgba(255, 0, 127, 0.4);
+            }
+
+            /* Cải thiện Input & Controls */
+            .form-label-custom {
+                font-size: 1.05rem;
+                font-weight: 700;
+                color: var(--text-main);
+                display: flex;
+                justify-content: space-between;
             }
 
             .custom-input {
-                background: rgba(11, 15, 25, 0.6) !important;
-                border: 1px solid var(--card-border) !important;
+                background: rgba(0, 0, 0, 0.25) !important;
+                border: 2px solid var(--card-border) !important;
                 color: var(--accent-cyan) !important;
-                font-weight: 700;
+                font-weight: 800;
+                font-size: 1.25rem;
                 text-align: center;
+                border-radius: 12px;
             }
 
             .btn-step {
-                background: rgba(255, 255, 255, 0.05);
+                background: linear-gradient(135deg, #2a2d3d, #1a1c29);
                 border: 1px solid var(--card-border);
                 color: #fff;
+                font-weight: 800;
+                font-size: 1.2rem;
+                width: 45px;
+                border-radius: 12px !important;
+            }
+            .btn-step:hover {
+                background: var(--accent-cyan);
+                color: #000;
+            }
+
+            /* Slider tùy chỉnh rực rỡ */
+            .form-range::-webkit-slider-thumb {
+                background: var(--accent-pink);
+                box-shadow: 0 0 10px var(--accent-pink);
+            }
+
+            /* Nút Phân Tích rực rỡ */
+            .btn-analyze {
+                background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+                color: #000;
+                font-weight: 800;
+                font-size: 1.25rem;
+                letter-spacing: 0.5px;
+                border: none;
+                border-radius: 16px;
+                box-shadow: 0 0 25px rgba(0, 242, 254, 0.4);
+                transition: all 0.3s;
+            }
+            .btn-analyze:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 0 35px rgba(0, 242, 254, 0.7);
+                color: #000;
             }
 
             .img-box {
-                border-radius: 16px;
+                border-radius: 20px;
                 overflow: hidden;
-                border: 1px solid var(--card-border);
+                border: 2px solid var(--card-border);
                 background: #000;
-                height: 320px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                height: 300px;
+                box-shadow: 0 8px 25px rgba(0,0,0,0.4);
             }
-
             .img-box img {
                 width: 100%;
                 height: 100%;
-                object-fit: contain;
+                object-fit: cover;
             }
 
             .progress-custom {
-                height: 8px;
-                background: rgba(255, 255, 255, 0.05);
-                border-radius: 4px;
+                height: 14px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 10px;
+                overflow: hidden;
             }
 
-            .table-custom {
-                color: #cbd5e1;
-            }
-            .table-custom th {
-                color: #94a3b8;
-                border-bottom-color: var(--card-border);
-            }
-            .table-custom td {
-                border-bottom-color: rgba(255, 255, 255, 0.03);
-            }
+            /* Cỡ chữ mô tả và nhãn */
+            .text-large { font-size: 1.15rem; }
+            .flower-title { font-size: 2.2rem; font-weight: 800; }
         </style>
     </head>
     <body>
@@ -160,159 +208,175 @@ def home_ui():
         <!-- Header Navigation -->
         <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top px-4">
             <div class="container-fluid">
-                <a class="navbar-brand d-flex align-items-center gap-2 fw-800" href="#">
-                    <span class="fs-4">🧬</span> IRIS ANALYTICS PRO
+                <a class="navbar-brand d-flex align-items-center gap-3 fw-800 fs-3" href="#">
+                    <span>✨</span> <span style="background: linear-gradient(to right, #00f2fe, #ff007f); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">IRIS ANALYTICS PRO</span>
                 </a>
                 <div class="d-flex align-items-center gap-3">
-                    <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">Engine: Active (SVM)</span>
+                    <button class="btn btn-outline-light btn-sm rounded-pill px-3" onclick="toggleTheme()">🌓 Đổi Theme</button>
+                    <span class="badge bg-success p-2 fs-6">SVM Engine Active</span>
                 </div>
             </div>
         </nav>
 
-        <div class="main-container">
+        <div class="container-fluid px-4 py-4">
             <!-- Navigation Tabs -->
-            <ul class="nav nav-pills mb-4 justify-content-center gap-2" id="mainTabs" role="tablist">
+            <ul class="nav nav-pills mb-4 justify-content-center gap-3" id="mainTabs">
                 <li class="nav-item">
-                    <button class="nav-link active" id="predict-tab" data-bs-toggle="pill" data-bs-target="#tab-predict">🔮 Phân Loại AI</button>
+                    <button class="nav-link active" id="predict-tab" data-bs-toggle="pill" data-bs-target="#tab-predict">🔮 Bảng Dự Đoán Interactive</button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link" id="library-tab" data-bs-toggle="pill" data-bs-target="#tab-library">📚 Thư Viện Loài Hoa</button>
+                    <button class="nav-link" id="library-tab" data-bs-toggle="pill" data-bs-target="#tab-library">📚 Thư Viện 3D & Sinh Học</button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link" id="history-tab" data-bs-toggle="pill" data-bs-target="#tab-history">📜 Lịch Sử Dự Đoán</button>
+                    <button class="nav-link" id="history-tab" data-bs-toggle="pill" data-bs-target="#tab-history">📜 Lịch Sử & Xuất Dữ Liệu</button>
                 </li>
             </ul>
 
-            <div class="tab-content" id="mainTabsContent">
+            <div class="tab-content">
                 
                 <!-- TAB 1: PREDICT ENGINE -->
                 <div class="tab-pane fade show active" id="tab-predict">
                     <div class="row g-4">
-                        <!-- Input Controls (4 cols) -->
-                        <div class="col-lg-4">
-                            <div class="glass-card p-4 h-100">
-                                <h5 class="fw-700 mb-3 text-light">🎛️ Bảng Điều Khiển</h5>
+                        <!-- Input Controls (5 cols) -->
+                        <div class="col-xl-5 col-lg-6">
+                            <div class="glass-card p-4">
+                                <h4 class="fw-800 mb-3 text-warning">🎛️ Tương Tác Thông Số Hoa</h4>
                                 
-                                <div class="mb-3">
-                                    <label class="small text-secondary mb-1">Mẫu nhanh:</label>
-                                    <div class="d-flex gap-1">
-                                        <button class="btn btn-sm btn-outline-info flex-fill" onclick="loadPreset(5.1, 3.5, 1.4, 0.2)">Setosa</button>
-                                        <button class="btn btn-sm btn-outline-info flex-fill" onclick="loadPreset(6.0, 2.9, 4.5, 1.5)">Versicolor</button>
-                                        <button class="btn btn-sm btn-outline-info flex-fill" onclick="loadPreset(6.5, 3.0, 5.5, 2.0)">Virginica</button>
+                                <div class="mb-4">
+                                    <label class="form-label text-sub fw-600 mb-2">Chọn mẫu thử nhanh:</label>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-outline-info flex-fill fw-700 py-2" onclick="loadPreset(5.1, 3.5, 1.4, 0.2)">🌸 Setosa</button>
+                                        <button class="btn btn-outline-warning flex-fill fw-700 py-2" onclick="loadPreset(6.0, 2.9, 4.5, 1.5)">🌺 Versicolor</button>
+                                        <button class="btn btn-outline-danger flex-fill fw-700 py-2" onclick="loadPreset(6.5, 3.0, 5.5, 2.0)">🌻 Virginica</button>
                                     </div>
                                 </div>
 
-                                <hr class="border-secondary opacity-25">
+                                <hr class="border-secondary opacity-25 mb-4">
 
-                                <div class="mb-3">
-                                    <label class="small text-secondary mb-1">Sepal Length (Dài đài hoa):</label>
-                                    <div class="input-group">
+                                <!-- Sepal Length -->
+                                <div class="mb-4">
+                                    <div class="form-label-custom mb-1">
+                                        <span>Sepal Length (Dài đài hoa)</span>
+                                        <span class="text-info" id="val_sl">5.1 cm</span>
+                                    </div>
+                                    <div class="input-group mb-2">
                                         <button class="btn btn-step" onclick="stepVal('sepal_length', -0.1)">-</button>
-                                        <input type="number" class="form-control custom-input" id="sepal_length" value="5.1" step="0.1">
+                                        <input type="number" class="form-control custom-input" id="sepal_length" value="5.1" step="0.1" oninput="syncSlider('sepal_length', 'range_sl', 'val_sl')">
                                         <button class="btn btn-step" onclick="stepVal('sepal_length', 0.1)">+</button>
                                     </div>
+                                    <input type="range" class="form-range" id="range_sl" min="4.0" max="8.0" step="0.1" value="5.1" oninput="syncInput('sepal_length', 'range_sl', 'val_sl')">
                                 </div>
 
-                                <div class="mb-3">
-                                    <label class="small text-secondary mb-1">Sepal Width (Rộng đài hoa):</label>
-                                    <div class="input-group">
+                                <!-- Sepal Width -->
+                                <div class="mb-4">
+                                    <div class="form-label-custom mb-1">
+                                        <span>Sepal Width (Rộng đài hoa)</span>
+                                        <span class="text-info" id="val_sw">3.5 cm</span>
+                                    </div>
+                                    <div class="input-group mb-2">
                                         <button class="btn btn-step" onclick="stepVal('sepal_width', -0.1)">-</button>
-                                        <input type="number" class="form-control custom-input" id="sepal_width" value="3.5" step="0.1">
+                                        <input type="number" class="form-control custom-input" id="sepal_width" value="3.5" step="0.1" oninput="syncSlider('sepal_width', 'range_sw', 'val_sw')">
                                         <button class="btn btn-step" onclick="stepVal('sepal_width', 0.1)">+</button>
                                     </div>
+                                    <input type="range" class="form-range" id="range_sw" min="2.0" max="4.5" step="0.1" value="3.5" oninput="syncInput('sepal_width', 'range_sw', 'val_sw')">
                                 </div>
 
-                                <div class="mb-3">
-                                    <label class="small text-secondary mb-1">Petal Length (Dài cánh hoa):</label>
-                                    <div class="input-group">
+                                <!-- Petal Length -->
+                                <div class="mb-4">
+                                    <div class="form-label-custom mb-1">
+                                        <span>Petal Length (Dài cánh hoa)</span>
+                                        <span class="text-info" id="val_pl">1.4 cm</span>
+                                    </div>
+                                    <div class="input-group mb-2">
                                         <button class="btn btn-step" onclick="stepVal('petal_length', -0.1)">-</button>
-                                        <input type="number" class="form-control custom-input" id="petal_length" value="1.4" step="0.1">
+                                        <input type="number" class="form-control custom-input" id="petal_length" value="1.4" step="0.1" oninput="syncSlider('petal_length', 'range_pl', 'val_pl')">
                                         <button class="btn btn-step" onclick="stepVal('petal_length', 0.1)">+</button>
                                     </div>
+                                    <input type="range" class="form-range" id="range_pl" min="1.0" max="7.0" step="0.1" value="1.4" oninput="syncInput('petal_length', 'range_pl', 'val_pl')">
                                 </div>
 
+                                <!-- Petal Width -->
                                 <div class="mb-4">
-                                    <label class="small text-secondary mb-1">Petal Width (Rộng cánh hoa):</label>
-                                    <div class="input-group">
+                                    <div class="form-label-custom mb-1">
+                                        <span>Petal Width (Rộng cánh hoa)</span>
+                                        <span class="text-info" id="val_pw">0.2 cm</span>
+                                    </div>
+                                    <div class="input-group mb-2">
                                         <button class="btn btn-step" onclick="stepVal('petal_width', -0.1)">-</button>
-                                        <input type="number" class="form-control custom-input" id="petal_width" value="0.2" step="0.1">
+                                        <input type="number" class="form-control custom-input" id="petal_width" value="0.2" step="0.1" oninput="syncSlider('petal_width', 'range_pw', 'val_pw')">
                                         <button class="btn btn-step" onclick="stepVal('petal_width', 0.1)">+</button>
                                     </div>
+                                    <input type="range" class="form-range" id="range_pw" min="0.1" max="2.5" step="0.1" value="0.2" oninput="syncInput('petal_width', 'range_pw', 'val_pw')">
                                 </div>
 
-                                <button class="btn btn-primary w-100 py-3 fw-700 text-uppercase rounded-3" style="background: linear-gradient(135deg, #6366f1, #a855f7); border:none;" onclick="makePrediction()">
-                                    Phân Tích Dữ Liệu
+                                <button class="btn btn-analyze w-100 py-3 mt-2" onclick="makePrediction()">
+                                    ⚡ CHẠY PHÂN TÍCH AI NOW
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Result Display (8 cols) -->
-                        <div class="col-lg-8">
+                        <!-- Result Display (7 cols) -->
+                        <div class="col-xl-7 col-lg-6">
                             <div class="glass-card p-4 h-100">
                                 <div id="placeholderText" class="text-center py-5 my-auto">
-                                    <div class="display-3 mb-3 text-muted">📊</div>
-                                    <h5>Đang chờ thông số đầu vào...</h5>
-                                    <p class="text-secondary small">Nhấn "Phân Tích Dữ Liệu" để xem kết quả toàn diện.</p>
+                                    <div class="display-1 mb-3">🌿</div>
+                                    <h3 class="fw-700">Chờ lệnh phân tích...</h3>
+                                    <p class="text-sub fs-5">Hãy thay đổi thông số ở bảng bên trái hoặc nhấn nút Phân Tích.</p>
                                 </div>
 
                                 <div id="resultSection" style="display: none;">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <div>
-                                            <span id="flowerBadge" class="badge bg-info bg-opacity-25 text-info border border-info border-opacity-25 mb-1"></span>
-                                            <h3 id="flowerName" class="fw-800 text-light m-0"></h3>
+                                            <span id="flowerBadge" class="badge bg-warning text-dark fs-6 mb-2"></span>
+                                            <h1 id="flowerName" class="flower-title text-uppercase m-0" style="color: var(--accent-cyan);"></h1>
                                         </div>
-                                        <button class="btn btn-sm btn-outline-light" onclick="exportCSV()">📥 Xuất Kết Quả CSV</button>
                                     </div>
 
-                                    <div class="row g-3">
+                                    <div class="row g-4">
                                         <div class="col-md-6">
                                             <div class="img-box mb-3">
                                                 <img id="flowerImg" src="" alt="Specimen Image">
                                             </div>
-                                            <p id="flowerDesc" class="small text-secondary mb-0"></p>
+                                            <p id="flowerDesc" class="text-large text-sub mb-0"></p>
                                         </div>
 
                                         <div class="col-md-6">
-                                            <h6 class="fw-700 text-light mb-3">Phân Tích Xác Suất (Confidence)</h6>
+                                            <h5 class="fw-800 text-warning mb-3">Xác Suất Nhận Diện (Confidence)</h5>
                                             
                                             <div class="mb-3">
-                                                <div class="d-flex justify-content-between small mb-1">
+                                                <div class="d-flex justify-content-between fw-700 mb-1 fs-6">
                                                     <span>Iris Setosa</span>
-                                                    <span id="probSetosa">0%</span>
+                                                    <span id="probSetosa" class="text-info">0%</span>
                                                 </div>
                                                 <div class="progress progress-custom">
-                                                    <div id="barSetosa" class="progress-bar bg-info" style="width: 0%"></div>
+                                                    <div id="barSetosa" class="progress-bar bg-info progress-bar-striped progress-bar-animated" style="width: 0%"></div>
                                                 </div>
                                             </div>
 
                                             <div class="mb-3">
-                                                <div class="d-flex justify-content-between small mb-1">
+                                                <div class="d-flex justify-content-between fw-700 mb-1 fs-6">
                                                     <span>Iris Versicolor</span>
-                                                    <span id="probVersicolor">0%</span>
+                                                    <span id="probVersicolor" class="text-warning">0%</span>
                                                 </div>
                                                 <div class="progress progress-custom">
-                                                    <div id="barVersicolor" class="progress-bar bg-warning" style="width: 0%"></div>
+                                                    <div id="barVersicolor" class="progress-bar bg-warning progress-bar-striped progress-bar-animated" style="width: 0%"></div>
                                                 </div>
                                             </div>
 
                                             <div class="mb-4">
-                                                <div class="d-flex justify-content-between small mb-1">
+                                                <div class="d-flex justify-content-between fw-700 mb-1 fs-6">
                                                     <span>Iris Virginica</span>
-                                                    <span id="probVirginica">0%</span>
+                                                    <span id="probVirginica" style="color:#ff007f;">0%</span>
                                                 </div>
                                                 <div class="progress progress-custom">
-                                                    <div id="barVirginica" class="progress-bar bg-purple" style="width: 0%; background-color: #c084fc;"></div>
+                                                    <div id="barVirginica" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%; background-color: #ff007f;"></div>
                                                 </div>
                                             </div>
 
-                                            <h6 class="fw-700 text-light mb-2">Đặc Tính Sinh Học</h6>
-                                            <div class="p-3 rounded-3 mb-2" style="background: rgba(0,0,0,0.2);">
-                                                <small class="text-secondary d-block">Môi trường sống:</small>
-                                                <span id="habitatVal" class="small text-light fw-600">--</span>
-                                            </div>
-                                            <div class="p-3 rounded-3" style="background: rgba(0,0,0,0.2);">
-                                                <small class="text-secondary d-block">Phân bố tự nhiên:</small>
-                                                <span id="originVal" class="small text-light fw-600">--</span>
+                                            <!-- Biểu đồ Radar so sánh -->
+                                            <h5 class="fw-800 text-warning mb-2">Biểu Đồ Hình Học (Radar Chart)</h5>
+                                            <div style="height: 180px; position: relative;">
+                                                <canvas id="radarChart"></canvas>
                                             </div>
                                         </div>
                                     </div>
@@ -326,24 +390,24 @@ def home_ui():
                 <div class="tab-pane fade" id="tab-library">
                     <div class="row g-4">
                         <div class="col-md-4">
-                            <div class="glass-card p-3 h-100 text-center">
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/5/56/Kosaciec_szczecinkowaty_Iris_setosa.jpg" class="img-fluid rounded-3 mb-3" style="height: 200px; object-fit: cover; width: 100%;">
-                                <h5 class="fw-700 text-info">Iris Setosa</h5>
-                                <p class="small text-secondary">Kích thước cánh hoa nhỏ nhất, đài hoa rộng. Khả năng chống chịu thời tiết lạnh tốt nhất trong 3 loài.</p>
+                            <div class="glass-card p-4 text-center h-100">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/5/56/Kosaciec_szczecinkowaty_Iris_setosa.jpg" class="img-fluid rounded-4 mb-3" style="height: 220px; object-fit: cover; width: 100%;">
+                                <h3 class="fw-800 text-info">Iris Setosa</h3>
+                                <p class="text-sub fs-6">Kích thước cánh hoa nhỏ nhất. Đánh giá dựa trên góc đài hoa hẹp và cấu trúc cánh đứng.</p>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="glass-card p-3 h-100 text-center">
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Iris_versicolor_3.jpg" class="img-fluid rounded-3 mb-3" style="height: 200px; object-fit: cover; width: 100%;">
-                                <h5 class="fw-700 text-warning">Iris Versicolor</h5>
-                                <p class="small text-secondary">Kích thước trung bình, dải sắc tố đa dạng từ xanh xám đến xanh tím. Thường phân bố ở vùng đầm lầy ven biển.</p>
+                            <div class="glass-card p-4 text-center h-100">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Iris_versicolor_3.jpg" class="img-fluid rounded-4 mb-3" style="height: 220px; object-fit: cover; width: 100%;">
+                                <h3 class="fw-800 text-warning">Iris Versicolor</h3>
+                                <p class="text-sub fs-6">Kích thước trung bình, dải màu biến đổi đa dạng từ xám lam tới hoa xám tím.</p>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="glass-card p-3 h-100 text-center">
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/9/9f/Iris_virginica.jpg" class="img-fluid rounded-3 mb-3" style="height: 200px; object-fit: cover; width: 100%;">
-                                <h5 class="fw-700 text-purple" style="color: #c084fc;">Iris Virginica</h5>
-                                <p class="small text-secondary">Loài có kích thước lớn nhất. Cánh hoa rủ xuống đặc trưng với sắc tím đậm ấn tượng.</p>
+                            <div class="glass-card p-4 text-center h-100">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/9/9f/Iris_virginica.jpg" class="img-fluid rounded-4 mb-3" style="height: 220px; object-fit: cover; width: 100%;">
+                                <h3 class="fw-800" style="color: #ff007f;">Iris Virginica</h3>
+                                <p class="text-sub fs-6">Kích thước lớn nhất trong bộ dữ liệu. Cánh hoa dài rủ xuống tự nhiên.</p>
                             </div>
                         </div>
                     </div>
@@ -353,24 +417,27 @@ def home_ui():
                 <div class="tab-pane fade" id="tab-history">
                     <div class="glass-card p-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-700 m-0">📜 Lịch Sử Phân Tích Trong Phiên</h5>
-                            <button class="btn btn-sm btn-outline-danger" onclick="clearHistory()">Xóa Lịch Sử</button>
+                            <h4 class="fw-800 text-warning m-0">📜 Lịch Sử Dự Đoán Phiên Hiện Tại</h4>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline-info" onclick="exportCSV()">📥 Xuất CSV</button>
+                                <button class="btn btn-outline-danger" onclick="clearHistory()">🗑️ Xóa Lịch Sử</button>
+                            </div>
                         </div>
                         <div class="table-responsive">
-                            <table class="table table-custom align-middle">
+                            <table class="table table-dark table-hover align-middle fs-6">
                                 <thead>
                                     <tr>
                                         <th>#</th>
-                                        <th>Sepal L</th>
-                                        <th>Sepal W</th>
-                                        <th>Petal L</th>
-                                        <th>Petal W</th>
-                                        <th>Kết Quả Dự Đoán</th>
+                                        <th>Sepal Length</th>
+                                        <th>Sepal Width</th>
+                                        <th>Petal Length</th>
+                                        <th>Petal Width</th>
+                                        <th>Kết Quả Chẩn Đoán</th>
                                     </tr>
                                 </thead>
                                 <tbody id="historyTableBody">
                                     <tr>
-                                        <td colspan="6" class="text-center text-muted py-4">Chưa có dữ liệu phân tích nào được lưu.</td>
+                                        <td colspan="6" class="text-center text-muted py-4">Chưa có kết quả dự đoán nào.</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -384,11 +451,34 @@ def home_ui():
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
         <script>
             let historyLog = [];
+            let radarChart = null;
+
+            function toggleTheme() {
+                const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+                document.documentElement.setAttribute('data-bs-theme', currentTheme === 'dark' ? 'light' : 'dark');
+            }
+
+            function syncSlider(inputId, sliderId, labelId) {
+                const val = document.getElementById(inputId).value;
+                document.getElementById(sliderId).value = val;
+                document.getElementById(labelId).innerText = val + ' cm';
+            }
+
+            function syncInput(inputId, sliderId, labelId) {
+                const val = document.getElementById(sliderId).value;
+                document.getElementById(inputId).value = val;
+                document.getElementById(labelId).innerText = val + ' cm';
+            }
 
             function stepVal(id, delta) {
                 let el = document.getElementById(id);
-                let val = parseFloat(el.value) || 0;
-                el.value = Math.max(0.1, (val + delta)).toFixed(1);
+                let val = (parseFloat(el.value) || 0) + delta;
+                el.value = Math.max(0.1, val).toFixed(1);
+                
+                if (id === 'sepal_length') syncSlider('sepal_length', 'range_sl', 'val_sl');
+                if (id === 'sepal_width') syncSlider('sepal_width', 'range_sw', 'val_sw');
+                if (id === 'petal_length') syncSlider('petal_length', 'range_pl', 'val_pl');
+                if (id === 'petal_width') syncSlider('petal_width', 'range_pw', 'val_pw');
             }
 
             function loadPreset(sl, sw, pl, pw) {
@@ -396,6 +486,12 @@ def home_ui():
                 document.getElementById('sepal_width').value = sw;
                 document.getElementById('petal_length').value = pl;
                 document.getElementById('petal_width').value = pw;
+
+                syncSlider('sepal_length', 'range_sl', 'val_sl');
+                syncSlider('sepal_width', 'range_sw', 'val_sw');
+                syncSlider('petal_length', 'range_pl', 'val_pl');
+                syncSlider('petal_width', 'range_pw', 'val_pw');
+
                 makePrediction();
             }
 
@@ -405,44 +501,85 @@ def home_ui():
                 const pl = parseFloat(document.getElementById('petal_length').value);
                 const pw = parseFloat(document.getElementById('petal_width').value);
 
-                const response = await fetch('/predict', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sepal_length: sl, sepal_width: sw, petal_length: pl, petal_width: pw })
+                try {
+                    const response = await fetch('/predict', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sepal_length: sl, sepal_width: sw, petal_length: pl, petal_width: pw })
+                    });
+
+                    if (!response.ok) return alert("Lỗi kết nối máy chủ!");
+
+                    const result = await response.json();
+
+                    document.getElementById('placeholderText').style.display = 'none';
+                    document.getElementById('resultSection').style.display = 'block';
+
+                    document.getElementById('flowerName').innerText = result.info.name;
+                    document.getElementById('flowerBadge').innerText = result.info.badge;
+                    document.getElementById('flowerImg').src = result.info.img;
+                    document.getElementById('flowerDesc').innerText = result.info.desc;
+
+                    // Update Probabilities
+                    const probs = result.info.probs;
+                    document.getElementById('probSetosa').innerText = probs[0] + '%';
+                    document.getElementById('barSetosa').style.width = probs[0] + '%';
+
+                    document.getElementById('probVersicolor').innerText = probs[1] + '%';
+                    document.getElementById('barVersicolor').style.width = probs[1] + '%';
+
+                    document.getElementById('probVirginica').innerText = probs[2] + '%';
+                    document.getElementById('barVirginica').style.width = probs[2] + '%';
+
+                    // Update Radar Chart
+                    renderRadarChart([sl, sw, pl, pw]);
+
+                    // Save History
+                    historyLog.unshift({ sl, sw, pl, pw, result: result.info.name });
+                    renderHistory();
+
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+
+            function renderRadarChart(dataPoints) {
+                const ctx = document.getElementById('radarChart').getContext('2d');
+                if (radarChart) radarChart.destroy();
+
+                radarChart = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['Sepal Length', 'Sepal Width', 'Petal Length', 'Petal Width'],
+                        datasets: [{
+                            label: 'Thông Số Nhập',
+                            data: dataPoints,
+                            backgroundColor: 'rgba(0, 242, 254, 0.3)',
+                            borderColor: '#00f2fe',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#ff007f'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                angleLines: { color: 'rgba(255,255,255,0.2)' },
+                                grid: { color: 'rgba(255,255,255,0.2)' },
+                                pointLabels: { color: '#cbd5e1', font: { size: 11, weight: 'bold' } },
+                                ticks: { display: false }
+                            }
+                        },
+                        plugins: { legend: { display: false } }
+                    }
                 });
-
-                const result = await response.json();
-
-                document.getElementById('placeholderText').style.display = 'none';
-                document.getElementById('resultSection').style.display = 'block';
-
-                document.getElementById('flowerName').innerText = result.info.name;
-                document.getElementById('flowerBadge').innerText = result.info.badge;
-                document.getElementById('flowerImg').src = result.info.img;
-                document.getElementById('flowerDesc').innerText = result.info.desc;
-                document.getElementById('habitatVal').innerText = result.info.habitat;
-                document.getElementById('originVal').innerText = result.info.origin;
-
-                // Probability Progress Bars
-                const probs = result.info.probs;
-                document.getElementById('probSetosa').innerText = probs[0] + '%';
-                document.getElementById('barSetosa').style.width = probs[0] + '%';
-
-                document.getElementById('probVersicolor').innerText = probs[1] + '%';
-                document.getElementById('barVersicolor').style.width = probs[1] + '%';
-
-                document.getElementById('probVirginica').innerText = probs[2] + '%';
-                document.getElementById('barVirginica').style.width = probs[2] + '%';
-
-                // Save to history
-                historyLog.unshift({ sl, sw, pl, pw, result: result.info.name });
-                renderHistory();
             }
 
             function renderHistory() {
                 const tbody = document.getElementById('historyTableBody');
                 if(historyLog.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Chưa có dữ liệu.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Chưa có kết quả.</td></tr>';
                     return;
                 }
                 tbody.innerHTML = historyLog.map((item, index) => `
@@ -452,7 +589,7 @@ def home_ui():
                         <td>${item.sw} cm</td>
                         <td>${item.pl} cm</td>
                         <td>${item.pw} cm</td>
-                        <td><span class="badge bg-primary">${item.result}</span></td>
+                        <td><span class="badge bg-primary fs-6">${item.result}</span></td>
                     </tr>
                 `).join('');
             }
@@ -463,14 +600,14 @@ def home_ui():
             }
 
             function exportCSV() {
-                if (historyLog.length === 0) return alert('Chưa có lịch sử để xuất dữ liệu!');
+                if (historyLog.length === 0) return alert('Chưa có lịch sử để xuất!');
                 let csvContent = "data:text/csv;charset=utf-8,SepalLength,SepalWidth,PetalLength,PetalWidth,Prediction\\n"
                     + historyLog.map(e => `${e.sl},${e.sw},${e.pl},${e.pw},${e.result}`).join("\\n");
                 
                 const encodedUri = encodeURI(csvContent);
                 const link = document.createElement("a");
                 link.setAttribute("href", encodedUri);
-                link.setAttribute("download", "iris_analysis_report.csv");
+                link.setAttribute("download", "iris_report.csv");
                 document.body.appendChild(link);
                 link.click();
             }
@@ -483,10 +620,20 @@ def home_ui():
 @app.post("/predict")
 def predict(data: IrisInput):
     features = [[data.sepal_length, data.sepal_width, data.petal_length, data.petal_width]]
-    prediction = int(model.predict(features)[0])
     
+    if model is not None:
+        prediction = int(model.predict(features)[0])
+        info = species_info[prediction].copy()
+        
+        if hasattr(model, "predict_proba"):
+            probs = model.predict_proba(features)[0]
+            info["probs"] = [round(p * 100, 1) for p in probs]
+    else:
+        prediction = 0
+        info = species_info[prediction]
+
     return {
         "class_id": prediction,
-        "prediction": species_info[prediction]["name"],
-        "info": species_info[prediction]
+        "prediction": info["name"],
+        "info": info
     }
