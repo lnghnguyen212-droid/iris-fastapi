@@ -466,4 +466,3 @@ def predict(data: IrisInput):
         "prediction": species_info[prediction]["name"],
         "info": species_info[prediction]
     }
-    
