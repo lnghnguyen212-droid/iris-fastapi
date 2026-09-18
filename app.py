@@ -29,7 +29,7 @@ species_info = {
     0: {
         "name": "IRIS SETOSA",
         "badge": "Loài Đặc Hữu - Nhóm 01",
-        "img": "https://upload.wikimedia.org/wikipedia/commons/5/56/Kosaciec_szczecinkowaty_Iris_setosa.jpg",
+        "img": "https://www.gardenia.net/wp-content/uploads/2023/05/iris-setosa-780x520.webp",
         "desc": "Đặc trưng bởi lá đài rộng, cánh hoa nhỏ gọn. Mô hình SVM nhận diện loài này với độ tin cậy cao.",
         "habitat": "Vùng khí hậu ôn đới, đầm lầy",
         "origin": "Bắc Mỹ & Đông Bắc Á",
