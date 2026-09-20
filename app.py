@@ -564,19 +564,19 @@ def home():
                     <div class="col-md-4">
                         <div class="content-card text-center py-4">
                             <h3 class="fw-800 text-primary">150</h3>
-                            <span class="text-muted">Mẫu dữ liệu huấn luyện</span>
+                            <span class="text-light">Mẫu dữ liệu huấn luyện</span>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="content-card text-center py-4">
                             <h3 class="fw-800 text-success">98.6%</h3>
-                            <span class="text-muted">Độ chính xác trung bình</span>
+                            <span class="text-light">Độ chính xác trung bình</span>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="content-card text-center py-4">
                             <h3 class="fw-800 text-warning">SVM</h3>
-                            <span class="text-muted">Mô hình AI tốt nhất</span>
+                            <span class="text-light">Mô hình AI tốt nhất</span>
                         </div>
                     </div>
                 </div>
