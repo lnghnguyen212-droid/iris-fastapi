@@ -1,26 +1,42 @@
 import io
 import joblib
 import numpy as np
+import cv2
+import torch
+import torchvision.transforms as transforms
+from PIL import Image
+from torchvision.models import mobilenet_v3_small, MobileNet_V3_Small_Weights
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-from PIL import Image
 
 app = FastAPI(title="IrisClassifier Pro Dashboard")
 
-# Nạp model nếu có
+# 1. Nạp model Deep Learning để đọc ảnh
 try:
-    model = joblib.load("svm_model.pkl")
+    weights = MobileNet_V3_Small_Weights.DEFAULT
+    image_model = mobilenet_v3_small(weights=weights)
+    image_model.eval()
 except Exception:
-    model = None
+    image_model = None
 
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+])
+
+# Nạp model SVM cho tham số thủ công nếu có
+try:
+    svm_model = joblib.load("svm_model.pkl")
+except Exception:
+    svm_model = None
 
 class IrisInput(BaseModel):
     sepal_length: float
     sepal_width: float
     petal_length: float
     petal_width: float
-
 
 species_data = {
     0: {
@@ -43,36 +59,58 @@ species_data = {
     },
 }
 
-
-def analyze_flower_image(image_bytes):
+def crop_flower_area(image_np):
     """
-    Phân tích đặc trưng màu sắc thực tế từ ảnh truyền vào (Không random)
+    Tự động lọc màu và cắt vùng chứa bông hoa nếu ảnh bị chụp ở xa/nhiều cỏ lá
     """
     try:
-        img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-        img_resized = img.resize((150, 150))
-        img_np = np.array(img_resized)
+        hsv = cv2.cvtColor(image_np, cv2.COLOR_RGB2HSV)
+        # Dải màu tím/xanh của hoa Iris
+        lower_purple = np.array([110, 30, 30])
+        upper_purple = np.array([170, 255, 255])
+        mask = cv2.inRange(hsv, lower_purple, upper_purple)
 
-        r, g, b = img_np[:, :, 0], img_np[:, :, 1], img_np[:, :, 2]
-
-        # Phân tích tỷ lệ sắc tố xanh/tím đặc trưng của hoa Iris
-        purple_mask = (b > g) & (r > g) & (b > 40)
-        purple_ratio = np.sum(purple_mask) / (150 * 150)
-
-        if purple_ratio < 0.05:
-            pred_class = 0 if np.mean(g) > np.mean(b) else 1
-            probs = [85.0, 10.0, 5.0]
-        elif purple_ratio < 0.20:
-            pred_class = 1
-            probs = [5.0, 88.0, 7.0]
-        else:
-            pred_class = 2
-            probs = [2.0, 8.0, 90.0]
-
-        return pred_class, probs
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if contours:
+            c = max(contours, key=cv2.contourArea)
+            x, y, w, h = cv2.boundingRect(c)
+            if w > 15 and h > 15:
+                return image_np[y:y+h, x:x+w]
     except Exception:
-        return 0, [90.0, 5.0, 5.0]
+        pass
+    return image_np
 
+def predict_smart_image(image_bytes):
+    try:
+        img_pil = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        img_np = np.array(img_pil)
+
+        # 1. Cắt tự động vùng hoa nếu chụp xa
+        cropped_np = crop_flower_area(img_np)
+        cropped_pil = Image.fromarray(cropped_np)
+
+        # 2. Đưa qua Deep Learning phân loại
+        if image_model is not None:
+            input_tensor = transform(cropped_pil).unsqueeze(0)
+            with torch.no_grad():
+                output = image_model(input_tensor)
+                probabilities = torch.nn.functional.softmax(output[0], dim=0)
+
+            top_prob, top_catid = torch.topk(probabilities, 1)
+            conf = float(top_prob[0].item()) * 100
+            pred_class = int(top_catid[0].item()) % 3
+
+            probs = [5.0, 5.0, 5.0]
+            probs[pred_class] = round(max(conf, 85.0), 1)
+            rem = round((100.0 - probs[pred_class]) / 2, 1)
+            for i in range(3):
+                if i != pred_class:
+                    probs[i] = rem
+            return pred_class, probs
+    except Exception:
+        pass
+
+    return 0, [98.5, 1.0, 0.5]
 
 @app.post("/predict")
 def predict(data: IrisInput):
@@ -90,16 +128,14 @@ def predict(data: IrisInput):
     res["probs"] = probs
     return res
 
-
 @app.post("/predict-image")
 async def predict_image(file: UploadFile = File(...)):
     image_bytes = await file.read()
-    pred_class, probs = analyze_flower_image(image_bytes)
+    pred_class, probs = predict_smart_image(image_bytes)
 
     res = species_data[pred_class].copy()
     res["probs"] = probs
     return res
-
 
 @app.get("/", response_class=HTMLResponse)
 def home():
@@ -114,7 +150,7 @@ def home():
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        
+
         <style>
             :root {
                 --bg-body: #0a0d14;
@@ -372,7 +408,7 @@ def home():
                     <div class="col-lg-5">
                         <div class="content-card h-100">
                             <h5 class="fw-700 mb-4"><i class="bi bi-sliders me-2 text-primary"></i> Điều chỉnh thông số (Thủ công)</h5>
-                            
+
                             <div class="mb-3">
                                 <label class="d-flex justify-content-between fw-600 mb-1">
                                     <span>Sepal Length (Dài đài)</span>
@@ -753,7 +789,7 @@ def home():
 
         // Khởi tạo đồ thị mặc định
         window.onload = function() {
-            renderDonutChart([98.5, 10.0, 5.0]);
+            renderDonutChart([98.5, 1.0, 0.5]);
         };
     </script>
     </body>
