@@ -61,7 +61,6 @@ def predict(data: IrisInput):
 
 @app.post("/predict-image")
 async def predict_image(file: UploadFile = File(...)):
-    # Giả lập xử lý phân loại từ hình ảnh tải lên
     pred_class = np.random.choice([0, 1, 2])
     probs_map = {
         0: [98.5, 1.0, 0.5],
@@ -110,7 +109,6 @@ def home():
                 min-height: 100vh;
             }
 
-            /* SIDEBAR */
             .sidebar {
                 width: 260px;
                 background-color: var(--sidebar-bg);
@@ -158,14 +156,12 @@ def home():
                 color: #ffffff;
             }
 
-            /* MAIN CONTENT */
             .main-content {
                 flex: 1;
                 padding: 20px 30px;
                 max-width: calc(100vw - 260px);
             }
 
-            /* HERO BANNER */
             .hero-banner {
                 background: linear-gradient(135deg, #1e1b4b 0%, #311042 100%);
                 border-radius: 24px;
@@ -188,7 +184,6 @@ def home():
                 border-radius: 24px;
             }
 
-            /* CARDS GRID */
             .content-card {
                 background-color: var(--card-bg);
                 border: 1px solid var(--border-color);
@@ -204,7 +199,6 @@ def home():
                 display: block;
             }
 
-            /* UPLOAD BOX STYLES */
             .upload-nav-tabs .nav-link {
                 color: var(--text-muted);
                 border: 1px solid transparent;
@@ -229,7 +223,7 @@ def home():
                 cursor: pointer;
             }
 
-            .drop-zone:hover, .drop-zone.dragover {
+            .drop-zone:hover, .drop-zone:focus {
                 border-color: var(--accent-purple);
                 background-color: rgba(99, 102, 241, 0.05);
             }
@@ -247,7 +241,6 @@ def home():
                 margin-bottom: 12px;
             }
 
-            /* CUSTOM TABLES & BADGES */
             .table-dark {
                 --bs-table-bg: transparent;
                 --bs-table-border-color: var(--border-color);
@@ -258,7 +251,7 @@ def home():
     <body>
 
     <div class="app-wrapper">
-        <!-- SIDEBAR BÊN TRÁI -->
+        <!-- SIDEBAR -->
         <aside class="sidebar">
             <div>
                 <a href="#" class="sidebar-brand">
@@ -279,28 +272,24 @@ def home():
             </div>
         </aside>
 
-        <!-- NỘI DUNG CHÍNH -->
+        <!-- MAIN CONTENT -->
         <main class="main-content">
-            <!-- TAB 1: TRANG CHỦ -->
             <div id="tab-home" class="tab-section active">
                 <div class="hero-banner d-flex align-items-center">
                     <div style="max-width: 550px; z-index: 2;">
                         <span class="badge bg-primary bg-opacity-28 text-white mb-2 px-3 py-2 rounded-pill">AI POWERED FLOWER CLASSIFICATION</span>
                         <h1 class="fw-800 display-5 mb-3">Phân loại hoa Iris</h1>
-                        <p class="text-white-50 fs-6 mb-4">Tải ảnh lên, chụp camera trực tiếp hoặc điều chỉnh thông số để AI phân loại loài hoa Iris nhanh chóng.</p>
+                        <p class="text-white-50 fs-6 mb-4">Tải ảnh lên, dán ảnh từ clipboard, chụp camera hoặc điều chỉnh thông số để AI phân loại loài hoa Iris.</p>
                         <button class="btn btn-primary rounded-pill px-4 py-2 me-2" onclick="switchTab('tab-predict-section', document.querySelectorAll('.nav-item-link')[1])">Bắt đầu phân loại <i class="bi bi-arrow-right"></i></button>
                     </div>
                     <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Iris_versicolor_3.jpg" alt="Iris Banner">
                 </div>
             </div>
 
-            <!-- TAB 2: KHU VỰC DỰ ĐOÁN -->
             <div id="tab-predict-section" class="tab-section active">
-                
-                <!-- PHẦN TẢI CẢNH / CHỤP ẢNH MỚI BỔ SUNG -->
                 <div class="content-card mb-4">
                     <h5 class="fw-700 mb-1">Phân loại hoa Iris bằng hình ảnh</h5>
-                    <p class="text-muted small mb-3">Tải ảnh lên hoặc sử dụng camera để bắt đầu</p>
+                    <p class="text-muted small mb-3">Tải ảnh lên, dán ảnh từ clipboard hoặc sử dụng camera để bắt đầu</p>
 
                     <ul class="nav nav-pills upload-nav-tabs gap-2 mb-3" id="uploadTab" role="tablist">
                         <li class="nav-item" role="presentation">
@@ -310,18 +299,18 @@ def home():
                             <button class="nav-link" id="camera-tab-btn" data-bs-toggle="pill" data-bs-target="#camera-pane" type="button" onclick="initCamera()"><i class="bi bi-camera me-2"></i>Chụp ảnh</button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="drag-tab-btn" data-bs-toggle="pill" data-bs-target="#upload-pane" type="button"><i class="bi bi-bounding-box-circles me-2"></i>Kéo & thả</button>
+                            <button class="nav-link" id="paste-tab-btn" data-bs-toggle="pill" data-bs-target="#paste-pane" type="button"><i class="bi bi-clipboard-plus me-2"></i>Dán ảnh</button>
                         </li>
                     </ul>
 
                     <div class="tab-content" id="uploadTabContent">
-                        <!-- TAB TẢI ÁNH / KÉO THẢ -->
+                        <!-- TAB TẢI ÁNH -->
                         <div class="tab-pane fade show active" id="upload-pane" role="tabpanel">
                             <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
                                 <div class="drop-icon-box">
                                     <i class="bi bi-folder-symlink"></i>
                                 </div>
-                                <h6 class="fw-700 mb-1">Kéo thả ảnh vào đây hoặc <span class="text-primary">chọn file</span></h6>
+                                <h6 class="fw-700 mb-1">Chọn file từ máy tính</h6>
                                 <p class="text-muted small mb-3">Hỗ trợ: JPG, PNG, WEBP | Tối đa 10MB</p>
                                 <button type="button" class="btn btn-primary rounded-pill px-4"><i class="bi bi-folder2-open me-2"></i>Chọn ảnh</button>
                                 <input type="file" id="fileInput" accept="image/*" class="d-none" onchange="handleFileSelect(event)">
@@ -337,10 +326,20 @@ def home():
                                 </div>
                             </div>
                         </div>
+
+                        <!-- TAB DÁN ÁNH MỚI -->
+                        <div class="tab-pane fade" id="paste-pane" role="tabpanel">
+                            <div class="drop-zone" id="pasteZone" tabindex="0" style="outline: none;">
+                                <div class="drop-icon-box">
+                                    <i class="bi bi-clipboard-check"></i>
+                                </div>
+                                <h6 class="fw-700 mb-1">Nhấn <span class="text-primary">Ctrl + V</span> (hoặc Cmd + V) để dán ảnh</h6>
+                                <p class="text-muted small mb-0">Sao chép một hình ảnh bất kỳ từ trình duyệt hoặc thiết bị rồi dán trực tiếp vào đây</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- PHẦN ĐIỀU CHỈNH SLIDER & KẾT QUẢ -->
                 <div class="row g-4">
                     <div class="col-lg-5">
                         <div class="content-card h-100">
@@ -423,7 +422,6 @@ def home():
                 </div>
             </div>
 
-            <!-- TAB 3: LỊCH SỬ PHÂN LOẠI -->
             <div id="tab-history" class="tab-section">
                 <div class="content-card">
                     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -447,7 +445,6 @@ def home():
                 </div>
             </div>
 
-            <!-- TAB 4: BỘ DỮ LIỆU -->
             <div id="tab-dataset" class="tab-section">
                 <div class="content-card">
                     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -479,7 +476,6 @@ def home():
                 </div>
             </div>
 
-            <!-- TAB 5: KIẾN THỨC -->
             <div id="tab-knowledge" class="tab-section">
                 <div class="row g-4">
                     <div class="col-md-4">
@@ -506,7 +502,6 @@ def home():
                 </div>
             </div>
 
-            <!-- TAB 6: THỐNG KÊ -->
             <div id="tab-stats" class="tab-section">
                 <div class="row g-4 mb-4">
                     <div class="col-md-4">
@@ -602,12 +597,40 @@ def home():
             });
             const data = await res.json();
 
-            // Hiển thị ảnh vừa tải lên ở thẻ kết quả
             const reader = new FileReader();
             reader.onload = function(e) {
                 data.img = e.target.result;
+                applyPredictResult(data, "Hình ảnh (Uploaded/Pasted)");
             };
+            reader.readAsDataURL(file);
         }
+
+        function applyPredictResult(data, sourceLabel) {
+            if (data.name) document.getElementById('resName').innerText = data.name;
+            if (data.acc) document.getElementById('resAcc').innerText = data.acc;
+            if (data.desc) document.getElementById('resDesc').innerText = data.desc;
+            if (data.img) document.getElementById('resImg').src = data.img;
+        }
+
+        // Bắt sự kiện Dán (Paste) ảnh từ Clipboard
+        document.addEventListener('paste', async (event) => {
+            const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+            for (let item of items) {
+                if (item.type.indexOf('image') !== -1) {
+                    const file = item.getAsFile();
+                    if (file) {
+                        // Tự động kích hoạt tab Dán ảnh nếu đang không ở đó
+                        const pasteTabBtn = document.getElementById('paste-tab-btn');
+                        if (pasteTabBtn) {
+                            const bsTab = new bootstrap.Tab(pasteTabBtn);
+                            bsTab.show();
+                        }
+                        await uploadAndPredictImage(file);
+                    }
+                    break;
+                }
+            }
+        });
     </script>
     </body>
     </html>
