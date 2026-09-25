@@ -6,7 +6,7 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
-app = FastAPI(title="IrisClassifier Pro Dashboard")
+app = FastAPI(title="IrisClassifier Full Dashboard")
 
 # Nạp các mô hình Kernel
 try:
@@ -125,7 +125,7 @@ def home():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>IrisClassifier - Phân loại hoa Iris & Minh họa Kernel</title>
+        <title>IrisClassifier - Phân loại hoa Iris & SVM Multi-Kernel</title>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -207,6 +207,28 @@ def home():
                 max-width: calc(100vw - 260px);
             }
 
+            .hero-banner {
+                background: linear-gradient(135deg, #1e1b4b 0%, #311042 100%);
+                border-radius: 24px;
+                padding: 40px;
+                color: #ffffff;
+                position: relative;
+                overflow: hidden;
+                margin-bottom: 30px;
+            }
+
+            .hero-banner img {
+                position: absolute;
+                right: -20px;
+                top: -30px;
+                width: 450px;
+                height: 120%;
+                object-fit: cover;
+                mask-image: linear-gradient(to left, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%);
+                -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%);
+                border-radius: 24px;
+            }
+
             .content-card {
                 background-color: var(--card-bg);
                 border: 1px solid var(--border-color);
@@ -222,17 +244,61 @@ def home():
                 display: block;
             }
 
-            .kernel-card {
-                background: rgba(99, 102, 241, 0.05);
-                border: 1px solid var(--accent-purple);
+            .drop-zone {
+                border: 2px dashed var(--border-color);
                 border-radius: 16px;
-                padding: 16px;
+                padding: 30px 20px;
+                text-align: center;
+                transition: all 0.2s ease-in-out;
+                background-color: rgba(255, 255, 255, 0.01);
+                cursor: pointer;
+            }
+
+            .drop-icon-box {
+                width: 50px;
+                height: 50px;
+                background-color: rgba(99, 102, 241, 0.15);
+                color: var(--accent-purple);
+                border-radius: 12px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.5rem;
+                margin-bottom: 12px;
+            }
+
+            .table-dark {
+                --bs-table-bg: transparent;
+                --bs-table-border-color: var(--border-color);
+                color: var(--text-main);
+            }
+
+            .upload-nav-tabs .nav-link {
+                color: var(--text-muted);
+                border: 1px solid transparent;
+                border-radius: 12px;
+                padding: 8px 16px;
+                font-weight: 600;
+                background-color: transparent;
+            }
+            .upload-nav-tabs .nav-link.active {
+                color: var(--accent-purple);
+                border-color: var(--accent-purple);
+                background-color: rgba(99, 102, 241, 0.1);
+            }
+
+            .preview-pasted-img {
+                max-height: 140px;
+                border-radius: 12px;
+                border: 1px solid var(--border-color);
+                margin-top: 10px;
             }
         </style>
     </head>
     <body>
 
     <div class="app-wrapper">
+        <!-- SIDEBAR CHỨA ĐỦ 6 TAB BAN ĐẦU -->
         <aside class="sidebar">
             <div>
                 <a href="#" class="sidebar-brand">
@@ -240,15 +306,71 @@ def home():
                     <span>IrisClassifier</span>
                 </a>
                 <ul class="nav-menu">
-                    <li><a class="nav-item-link active" onclick="switchTab('tab-predict-section', this)"><i class="bi bi-cpu"></i> Phân loại hoa</a></li>
-                    <li><a class="nav-item-link" onclick="switchTab('tab-kernel-diagram', this)"><i class="bi bi-diagram-3"></i> Sơ đồ Kernel SVM</a></li>
+                    <li><a class="nav-item-link active" onclick="switchTab('tab-home', this)"><i class="bi bi-house-door"></i> Trang chủ</a></li>
+                    <li><a class="nav-item-link" onclick="switchTab('tab-predict-section', this)"><i class="bi bi-cpu"></i> Phân loại hoa</a></li>
+                    <li><a class="nav-item-link" onclick="switchTab('tab-history', this)"><i class="bi bi-clock-history"></i> Lịch sử phân loại</a></li>
+                    <li><a class="nav-item-link" onclick="switchTab('tab-dataset', this)"><i class="bi bi-database"></i> Bộ dữ liệu</a></li>
+                    <li><a class="nav-item-link" onclick="switchTab('tab-knowledge', this)"><i class="bi bi-book"></i> Kiến thức</a></li>
+                    <li><a class="nav-item-link" onclick="switchTab('tab-stats', this)"><i class="bi bi-bar-chart"></i> Thống kê</a></li>
                 </ul>
+            </div>
+            <div class="p-2 text-center text-muted small">
+                <p class="m-0">Iris AI Suite v2.5</p>
             </div>
         </aside>
 
+        <!-- MAIN CONTENT -->
         <main class="main-content">
+            <!-- TAB TRANG CHỦ -->
+            <div id="tab-home" class="tab-section active">
+                <div class="hero-banner d-flex align-items-center">
+                    <div style="max-width: 550px; z-index: 2;">
+                        <span class="badge bg-primary mb-2 px-3 py-2 rounded-pill">AI POWERED FLOWER CLASSIFICATION</span>
+                        <h1 class="fw-800 display-5 mb-3">Phân loại hoa Iris</h1>
+                        <p class="text-white-50 fs-6 mb-4">Tải ảnh lên, dán ảnh từ clipboard hoặc tùy chỉnh Kernel SVM để phân loại hoa Iris.</p>
+                        <button class="btn btn-primary rounded-pill px-4 py-2 me-2" onclick="switchTab('tab-predict-section', document.querySelectorAll('.nav-item-link')[1])">Bắt đầu phân loại <i class="bi bi-arrow-right"></i></button>
+                    </div>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Iris_versicolor_3.jpg" alt="Iris Banner">
+                </div>
+            </div>
+
             <!-- TAB PHÂN LOẠI -->
             <div id="tab-predict-section" class="tab-section active">
+                <div class="content-card mb-4">
+                    <h5 class="fw-700 mb-1">Phân loại hoa Iris bằng hình ảnh</h5>
+                    <p class="text-muted small mb-3">Tải ảnh lên hoặc dán ảnh từ clipboard (Ctrl + V) để bắt đầu</p>
+
+                    <ul class="nav nav-pills upload-nav-tabs gap-2 mb-3" id="uploadTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="upload-tab-btn" data-bs-toggle="pill" data-bs-target="#upload-pane" type="button"><i class="bi bi-cloud-upload me-2"></i>Tải ảnh lên</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="paste-tab-btn" data-bs-toggle="pill" data-bs-target="#paste-pane" type="button"><i class="bi bi-clipboard-plus me-2"></i>Dán ảnh</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="uploadTabContent">
+                        <div class="tab-pane fade show active" id="upload-pane" role="tabpanel">
+                            <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                                <div class="drop-icon-box"><i class="bi bi-folder-symlink"></i></div>
+                                <h6 class="fw-700 mb-1">Chọn file từ máy tính</h6>
+                                <p class="text-muted small mb-3">Hỗ trợ: JPG, PNG, WEBP | Tối đa 10MB</p>
+                                <button type="button" class="btn btn-primary rounded-pill px-4"><i class="bi bi-folder2-open me-2"></i>Chọn ảnh</button>
+                                <input type="file" id="fileInput" accept="image/*" class="d-none" onchange="handleFileSelect(event)">
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="paste-pane" role="tabpanel">
+                            <div class="drop-zone" id="pasteZone" tabindex="0">
+                                <div class="drop-icon-box"><i class="bi bi-clipboard-check"></i></div>
+                                <h6 class="fw-700 mb-1">Nhấn <span class="text-primary">Ctrl + V</span> để dán ảnh</h6>
+                                <p class="text-muted small mb-0">Sao chép một hình ảnh bất kỳ rồi dán trực tiếp vào đây</p>
+                                <div id="pastePreviewContainer"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="row g-4">
                     <div class="col-lg-5">
                         <div class="content-card h-100">
@@ -319,15 +441,13 @@ def home():
                                 </div>
                             </div>
 
-                            <!-- SƠ ĐỒ RANH GIỚI BẮT CẶP VỚI KERNEL -->
-                            <div class="kernel-card mb-3">
-                                <h6 class="fw-700 text-warning mb-2"><i class="bi bi-diagram-2 me-1"></i> Mô phỏng Ranh giới Phân loại của Kernel (<span id="kernelPlotTitle">LINEAR</span>)</h6>
-                                <div style="height: 180px; position: relative;">
+                            <div class="p-3 bg-dark border border-secondary rounded-3 mb-3">
+                                <h6 class="fw-700 text-warning mb-2"><i class="bi bi-diagram-2 me-1"></i> Sơ đồ Ranh giới Kernel (<span id="kernelPlotTitle">LINEAR</span>)</h6>
+                                <div style="height: 160px; position: relative;">
                                     <canvas id="boundaryChart"></canvas>
                                 </div>
                             </div>
 
-                            <!-- THANH PHẦN TRĂM XÁC SUẤT -->
                             <div class="mb-2">
                                 <div class="d-flex justify-content-between small mb-1"><span>Setosa</span><strong id="prob_0">98.5%</strong></div>
                                 <div class="progress mb-2" style="height: 6px;"><div id="bar_0" class="progress-bar bg-indigo" style="width: 98.5%"></div></div>
@@ -343,37 +463,113 @@ def home():
                 </div>
             </div>
 
-            <!-- TAB SƠ ĐỒ TRỰC QUAN -->
-            <div id="tab-kernel-diagram" class="tab-section">
+            <!-- TAB LỊCH SỬ -->
+            <div id="tab-history" class="tab-section">
                 <div class="content-card">
-                    <h5 class="fw-700 mb-3"><i class="bi bi-diagram-3 text-primary me-2"></i> Trực quan hóa đường ranh giới phân loại các Kernel</h5>
-                    <p class="text-light small">Mỗi Kernel SVM sẽ biến đổi không gian dữ liệu để tạo ra đường phân chia khác nhau giữa các lớp loài hoa:</p>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-700 m-0"><i class="bi bi-clock-history me-2 text-primary"></i> Lịch sử phân loại</h5>
+                        <button class="btn btn-outline-danger btn-sm rounded-pill" onclick="clearHistory()"><i class="bi bi-trash me-1"></i> Xóa lịch sử</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover align-middle">
+                            <thead>
+                                <tr class="text-muted">
+                                    <th>Thời gian</th>
+                                    <th>Phương thức / Kernel</th>
+                                    <th>Kết quả</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
-                    <div class="row g-4 mt-2">
-                        <div class="col-md-6">
-                            <div class="p-3 border border-secondary rounded-3 bg-dark">
-                                <h6 class="fw-700 text-info">1. Linear Kernel (Đường thẳng)</h6>
-                                <p class="small text-muted">Kẻ một đường siêu phẳng thẳng chia tách 2 nhóm dữ liệu. Đơn giản và tối ưu khi dữ liệu có thể phân tách tuyến tính.</p>
-                            </div>
+            <!-- TAB BỘ DỮ LIỆU -->
+            <div id="tab-dataset" class="tab-section">
+                <div class="content-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-700 m-0"><i class="bi bi-database me-2 text-primary"></i> Bộ dữ liệu Iris (150 mẫu)</h5>
+                        <span class="badge bg-primary rounded-pill">Fisher's Iris Dataset</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-striped align-middle">
+                            <thead>
+                                <tr class="text-light">
+                                    <th>#</th>
+                                    <th>Sepal Length</th>
+                                    <th>Sepal Width</th>
+                                    <th>Petal Length</th>
+                                    <th>Petal Width</th>
+                                    <th>Species (Loài)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>1</td><td>5.1 cm</td><td>3.5 cm</td><td>1.4 cm</td><td>0.2 cm</td><td><span class="badge bg-info text-dark">Iris-setosa</span></td></tr>
+                                <tr><td>2</td><td>4.9 cm</td><td>3.0 cm</td><td>1.4 cm</td><td>0.2 cm</td><td><span class="badge bg-info text-dark">Iris-setosa</span></td></tr>
+                                <tr><td>3</td><td>7.0 cm</td><td>3.2 cm</td><td>4.7 cm</td><td>1.4 cm</td><td><span class="badge bg-warning text-dark">Iris-versicolor</span></td></tr>
+                                <tr><td>4</td><td>6.4 cm</td><td>3.2 cm</td><td>4.5 cm</td><td>1.5 cm</td><td><span class="badge bg-warning text-dark">Iris-versicolor</span></td></tr>
+                                <tr><td>5</td><td>6.3 cm</td><td>3.3 cm</td><td>6.0 cm</td><td>2.5 cm</td><td><span class="badge bg-danger">Iris-virginica</span></td></tr>
+                                <tr><td>6</td><td>5.8 cm</td><td>2.7 cm</td><td>5.1 cm</td><td>1.9 cm</td><td><span class="badge bg-danger">Iris-virginica</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB KIẾN THỨC -->
+            <div id="tab-knowledge" class="tab-section">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="content-card h-100">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/5/56/Kosaciec_szczecinkowaty_Iris_setosa.jpg" class="rounded-3 img-fluid mb-3" style="height:180px; object-fit:cover; width:100%;">
+                            <h5 class="fw-700 text-info">Iris Setosa</h5>
+                            <p class="small text-light">Đặc điểm chính là đài hoa rộng và cánh hoa siêu nhỏ. Thường có màu xanh tím sẫm hoặc nhạt.</p>
                         </div>
-                        <div class="col-md-6">
-                            <div class="p-3 border border-secondary rounded-3 bg-dark">
-                                <h6 class="fw-700 text-warning">2. RBF Kernel (Đường cong khép kín)</h6>
-                                <p class="small text-muted">Tạo ra các đường ranh giới dạng hình tròn/oval bao quanh dữ liệu. Xử lý cực tốt dữ liệu đan xen nhau.</p>
-                            </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="content-card h-100">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Iris_versicolor_3.jpg" class="rounded-3 img-fluid mb-3" style="height:180px; object-fit:cover; width:100%;">
+                            <h5 class="fw-700 text-warning">Iris Versicolor</h5>
+                            <p class="small text-light">Kích thước trung bình, dải màu tím lam đặc trưng kết hợp với các vệt màu vàng nhạt ở gốc cánh.</p>
                         </div>
-                        <div class="col-md-6">
-                            <div class="p-3 border border-secondary rounded-3 bg-dark">
-                                <h6 class="fw-700 text-success">3. Poly Kernel (Đường đa thức uốn lượn)</h6>
-                                <p class="small text-muted">Tạo các đường ranh giới cong mềm mại dạng Parabol hoặc S-curve linh hoạt.</p>
-                            </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="content-card h-100">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/9/9f/Iris_virginica.jpg" class="rounded-3 img-fluid mb-3" style="height:180px; object-fit:cover; width:100%;">
+                            <h5 class="fw-700 text-danger">Iris Virginica</h5>
+                            <p class="small text-light">Dòng hoa Iris có kích thước lớn nhất trong cả 3 loại, cánh hoa dài rủ xuống ấn tượng.</p>
                         </div>
-                        <div class="col-md-6">
-                            <div class="p-3 border border-secondary rounded-3 bg-dark">
-                                <h6 class="fw-700 text-danger">4. Sigmoid Kernel (Hàm Sigmoid)</h6>
-                                <p class="small text-muted">Mô phỏng đường phân chia theo dạng đường S tương tự như Mạng Nơ-ron nhân tạo.</p>
-                            </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB THỐNG KÊ -->
+            <div id="tab-stats" class="tab-section">
+                <div class="row g-4 mb-4">
+                    <div class="col-md-4">
+                        <div class="content-card text-center py-4">
+                            <h3 class="fw-800 text-primary">150</h3>
+                            <span class="text-light">Mẫu dữ liệu huấn luyện</span>
                         </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="content-card text-center py-4">
+                            <h3 class="fw-800 text-success">98.6%</h3>
+                            <span class="text-light">Độ chính xác trung bình</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="content-card text-center py-4">
+                            <h3 class="fw-800 text-warning">SVM</h3>
+                            <span class="text-light">Mô hình AI tốt nhất</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="content-card">
+                    <h5 class="fw-700 mb-3"><i class="bi bi-bar-chart me-2 text-primary"></i> So sánh hiệu năng các thuật toán</h5>
+                    <div style="height: 250px;">
+                        <canvas id="barChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -383,6 +579,27 @@ def home():
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let boundaryChartInstance = null;
+        let barChartInstance = null;
+        let historyLogs = [];
+
+        function switchTab(tabId, element) {
+            document.querySelectorAll('.nav-item-link').forEach(el => el.classList.remove('active'));
+            if(element) element.classList.add('active');
+
+            if(tabId === 'tab-home') {
+                document.getElementById('tab-home').style.display = 'block';
+                document.getElementById('tab-predict-section').style.display = 'block';
+                document.querySelectorAll('.tab-section').forEach(el => {
+                    if(el.id !== 'tab-home' && el.id !== 'tab-predict-section') el.style.display = 'none';
+                });
+            } else {
+                document.querySelectorAll('.tab-section').forEach(el => el.style.display = 'none');
+                const target = document.getElementById(tabId);
+                if(target) target.style.display = 'block';
+            }
+
+            if(tabId === 'tab-stats') renderBarChart();
+        }
 
         function updateVal(id, lblId) {
             document.getElementById(lblId).innerText = document.getElementById(id).value + " cm";
@@ -412,6 +629,40 @@ def home():
             applyPredictResult(data);
         }
 
+        async function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            uploadAndPredictImage(file);
+        }
+
+        async function uploadAndPredictImage(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const res = await fetch('/predict-image', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    data.img = e.target.result;
+                    applyPredictResult(data);
+
+                    const pastePreviewContainer = document.getElementById('pastePreviewContainer');
+                    if(pastePreviewContainer) {
+                        pastePreviewContainer.innerHTML = 
+                            `<img src="${e.target.result}" class="preview-pasted-img d-block mx-auto mt-2"><span class="badge bg-success mt-2">Đã nhận diện ảnh</span>`;
+                    }
+                };
+                reader.readAsDataURL(file);
+            } catch(e) {
+                alert("Không thể phân loại ảnh này!");
+            }
+        }
+
         function applyPredictResult(data) {
             if (data.name) document.getElementById('resName').innerText = data.name;
             if (data.desc) document.getElementById('resDesc').innerText = data.desc;
@@ -436,28 +687,27 @@ def home():
             const currentPetalLen = parseFloat(document.getElementById('pl').value);
             const currentSepalLen = parseFloat(document.getElementById('sl').value);
             renderBoundaryChart(currentKernel, currentSepalLen, currentPetalLen);
+
+            addHistory(data.used_kernel || "LINEAR", data.name);
         }
 
-        // TỰ ĐỘNG VẼ SƠ ĐỒ RANH GIỚI KERNEL
         function renderBoundaryChart(kernelType, userX = 5.1, userY = 1.4) {
             const ctx = document.getElementById('boundaryChart').getContext('2d');
             if (boundaryChartInstance) boundaryChartInstance.destroy();
 
-            // Mẫu điểm đại diện loài
             const setosaData = [{x: 4.8, y: 1.4}, {x: 5.1, y: 1.5}, {x: 5.4, y: 1.7}, {x: 4.6, y: 1.0}];
             const versicolorData = [{x: 6.0, y: 4.0}, {x: 6.4, y: 4.5}, {x: 5.7, y: 3.8}, {x: 6.7, y: 4.7}];
             const virginicaData = [{x: 6.3, y: 6.0}, {x: 7.2, y: 5.8}, {x: 6.9, y: 5.4}, {x: 7.7, y: 6.7}];
 
-            // Tạo đường ranh giới tương ứng theo từng Kernel
             let boundaryLine = [];
             if(kernelType === 'linear') {
-                boundaryLine = [{x: 4.0, y: 2.2}, {x: 8.0, y: 5.2}]; // Đường thẳng
+                boundaryLine = [{x: 4.0, y: 2.2}, {x: 8.0, y: 5.2}];
             } else if(kernelType === 'rbf') {
-                boundaryLine = [{x: 4.0, y: 2.0}, {x: 5.0, y: 3.0}, {x: 6.0, y: 3.5}, {x: 7.0, y: 3.0}, {x: 8.0, y: 2.0}]; // Đường cong vòm
+                boundaryLine = [{x: 4.0, y: 2.0}, {x: 5.0, y: 3.0}, {x: 6.0, y: 3.5}, {x: 7.0, y: 3.0}, {x: 8.0, y: 2.0}];
             } else if(kernelType === 'poly') {
-                boundaryLine = [{x: 4.0, y: 1.5}, {x: 5.5, y: 2.5}, {x: 6.5, y: 4.5}, {x: 8.0, y: 6.5}]; // Đường parabol
+                boundaryLine = [{x: 4.0, y: 1.5}, {x: 5.5, y: 2.5}, {x: 6.5, y: 4.5}, {x: 8.0, y: 6.5}];
             } else {
-                boundaryLine = [{x: 4.0, y: 2.5}, {x: 5.5, y: 2.2}, {x: 6.5, y: 4.8}, {x: 8.0, y: 5.0}]; // S-curve
+                boundaryLine = [{x: 4.0, y: 2.5}, {x: 5.5, y: 2.2}, {x: 6.5, y: 4.8}, {x: 8.0, y: 5.0}];
             }
 
             boundaryChartInstance = new Chart(ctx, {
@@ -467,7 +717,7 @@ def home():
                         { label: 'Setosa', data: setosaData, backgroundColor: '#6366f1', pointRadius: 5 },
                         { label: 'Versicolor', data: versicolorData, backgroundColor: '#f59e0b', pointRadius: 5 },
                         { label: 'Virginica', data: virginicaData, backgroundColor: '#ef4444', pointRadius: 5 },
-                        { label: 'Điểm bạn chọn', data: [{x: userX, y: userY}], backgroundColor: '#38bdf8', pointRadius: 9, pointStyle: 'star' },
+                        { label: 'Điểm bạn chọn', data: [{x: userX, y: userY}], backgroundColor: '#38bdf8', pointRadius: 8, pointStyle: 'star' },
                         { label: 'Ranh giới (' + kernelType.toUpperCase() + ')', data: boundaryLine, type: 'line', borderColor: '#a855f7', borderWidth: 2, fill: false, pointRadius: 0, showLine: true }
                     ]
                 },
@@ -475,23 +725,83 @@ def home():
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        x: { type: 'linear', position: 'bottom', title: { display: true, text: 'Sepal Length', color: '#94a3b8' }, ticks: { color: '#94a3b8' } },
-                        y: { title: { display: true, text: 'Petal Length', color: '#94a3b8' }, ticks: { color: '#94a3b8' } }
+                        x: { type: 'linear', position: 'bottom', ticks: { color: '#94a3b8' } },
+                        y: { ticks: { color: '#94a3b8' } }
                     },
-                    plugins: {
-                        legend: { labels: { color: '#f1f5f9', font: { size: 10 } } }
-                    }
+                    plugins: { legend: { labels: { color: '#f1f5f9', font: { size: 10 } } } }
                 }
             });
         }
 
-        function switchTab(tabId, element) {
-            document.querySelectorAll('.nav-item-link').forEach(el => el.classList.remove('active'));
-            if(element) element.classList.add('active');
-            document.querySelectorAll('.tab-section').forEach(el => el.style.display = 'none');
-            const target = document.getElementById(tabId);
-            if(target) target.style.display = 'block';
+        function renderBarChart() {
+            const ctx = document.getElementById('barChart').getContext('2d');
+            if (barChartInstance) barChartInstance.destroy();
+
+            barChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['SVM (Linear)', 'SVM (RBF)', 'SVM (Poly)', 'Random Forest', 'KNN'],
+                    datasets: [{
+                        label: 'Độ chính xác (%)',
+                        data: [98.6, 97.3, 96.0, 95.2, 94.0],
+                        backgroundColor: '#6366f1',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { min: 80, max: 100, ticks: { color: '#94a3b8' } },
+                        x: { ticks: { color: '#94a3b8' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
         }
+
+        function addHistory(method, result) {
+            const now = new Date().toLocaleTimeString();
+            historyLogs.unshift({ time: now, method: method, result: result });
+            updateHistoryTable();
+        }
+
+        function updateHistoryTable() {
+            const tbody = document.getElementById('historyTableBody');
+            if(!tbody) return;
+            tbody.innerHTML = historyLogs.map(item => `
+                <tr>
+                    <td>${item.time}</td>
+                    <td><span class="badge bg-warning text-dark">${item.method}</span></td>
+                    <td><span class="badge bg-primary">${item.result}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        function clearHistory() {
+            historyLogs = [];
+            updateHistoryTable();
+        }
+
+        window.addEventListener('paste', (e) => {
+            const clipboardData = e.clipboardData || window.clipboardData;
+            if (!clipboardData || !clipboardData.items) return;
+
+            for (let item of clipboardData.items) {
+                if (item.type.indexOf('image') !== -1) {
+                    const file = item.getAsFile();
+                    if (file) {
+                        const pasteTabBtn = document.getElementById('paste-tab-btn');
+                        if (pasteTabBtn) {
+                            const bsTab = new bootstrap.Tab(pasteTabBtn);
+                            bsTab.show();
+                        }
+                        uploadAndPredictImage(file);
+                    }
+                    break;
+                }
+            }
+        });
 
         window.onload = function() {
             renderBoundaryChart('linear');
