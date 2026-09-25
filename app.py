@@ -2,10 +2,17 @@ import io
 import numpy as np
 from PIL import Image, ImageFilter
 from fastapi import FastAPI, File, UploadFile, Form
+from fastapi.responses import HTMLResponse
 
 app = FastAPI()
 
-# Hàm áp dụng Kernel lọc ảnh đơn giản dùng Pillow
+# 1. Thêm Route hiển thị giao diện trang chủ (Fix lỗi Not Found)
+@app.get("/", response_class=HTMLResponse)
+async def read_root():
+    with open("index.html", "r", encoding="utf-8") as f:
+        return f.read()
+
+# 2. Hàm lọc ảnh đơn giản
 def apply_kernel(image_bytes: bytes, kernel_type: str) -> Image.Image:
     img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     
@@ -13,26 +20,22 @@ def apply_kernel(image_bytes: bytes, kernel_type: str) -> Image.Image:
         return img.filter(ImageFilter.GaussianBlur(radius=2))
     elif kernel_type == "sharpen":
         return img.filter(ImageFilter.SHARPEN)
-    elif kernel_type == "sobel" or kernel_type == "prewitt":
-        # Bộ lọc phát hiện cạnh cơ bản
+    elif kernel_type in ["sobel", "prewitt"]:
         return img.filter(ImageFilter.FIND_EDGES)
     elif kernel_type == "laplacian":
         return img.filter(ImageFilter.CONTOUR)
     
     return img
 
+# 3. Route xử lý dự đoán
 @app.post("/api/predict")
 async def predict(file: UploadFile = File(...), kernel: str = Form("none")):
     contents = await file.read()
-    
-    # Xử lý ảnh qua bộ lọc
     processed_img = apply_kernel(contents, kernel)
     
-    # --- ĐOẠN DỰ ĐOÁN MÔ HÌNH CỦA BẠN ---
-    # Thay thế phần này bằng code dự đoán từ mô hình Iris / AI của bạn
+    # Dự đoán (thay bằng model của bạn)
     categories = ["Iris setosa", "Iris versicolor", "Iris virginica"]
     label_result = categories[np.random.randint(0, 3)]
-    # ------------------------------------
 
     return {
         "status": "success",
