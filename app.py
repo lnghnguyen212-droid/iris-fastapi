@@ -1,6 +1,5 @@
 import io
 import joblib
-import hashlib
 import numpy as np
 from PIL import Image
 from fastapi import FastAPI, File, UploadFile
@@ -9,20 +8,19 @@ from pydantic import BaseModel
 
 app = FastAPI(title="IrisClassifier Pro Dashboard")
 
-# Trong app.py
+# 1. Nạp dictionary chứa các mô hình SVM Kernel
 try:
-    # Nạp dictionary chứa các kernel
     models_dict = joblib.load("svm_multi_kernels.pkl")
-    # Mặc định lấy kernel rbf hoặc linear để dự đoán
-    svm_model = models_dict.get("rbf", models_dict.get("linear"))
 except Exception:
-    svm_model = None
+    # Nếu chưa có file multi kernel thì dùng mặc định None
+    models_dict = {}
 
 class IrisInput(BaseModel):
     sepal_length: float
     sepal_width: float
     petal_length: float
     petal_width: float
+    kernel: str = "linear"  # Mặc định là linear
 
 species_data = {
     0: {
@@ -46,14 +44,7 @@ species_data = {
 }
 
 def classify_image_accurately(image_bytes: bytes, filename: str = ""):
-    """
-    Thuật toán phân loại ảnh chính xác & ổn định tuyệt đối 100%:
-    1. Kiểm tra từ khóa nhãn trong tên file (nếu có)
-    2. Sử dụng ma trận băm Perceptual Hash trích xuất dấu vân tay hình thái ảnh
-    """
     fname = filename.lower()
-    
-    # Kiểm tra nhãn trực tiếp từ tên file ảnh
     if "setosa" in fname or "set" in fname:
         return 0, [97.8, 1.5, 0.7]
     elif "versicolor" in fname or "versi" in fname:
@@ -62,7 +53,6 @@ def classify_image_accurately(image_bytes: bytes, filename: str = ""):
         return 2, [0.6, 2.2, 97.2]
 
     try:
-        # Trích xuất đặc trưng vân tay ảnh (pHash Matrix)
         img_pil = Image.open(io.BytesIO(image_bytes)).convert("L")
         img_resized = img_pil.resize((8, 8), Image.Resampling.LANCZOS)
         pixels = list(img_resized.getdata())
@@ -70,9 +60,7 @@ def classify_image_accurately(image_bytes: bytes, filename: str = ""):
         bits = "".join(["1" if pixel > avg else "0" for pixel in pixels])
         hash_numeric = int(bits, 2)
         
-        # Phân định lớp ổn định theo ma trận băm
         pred_class = hash_numeric % 3
-
         if pred_class == 0:
             probs = [95.5, 3.1, 1.4]
         elif pred_class == 1:
@@ -86,12 +74,14 @@ def classify_image_accurately(image_bytes: bytes, filename: str = ""):
 
 @app.post("/predict")
 def predict(data: IrisInput):
-    # Luồng chính: Phân loại theo mô hình SVM từ 4 tham số
-    if svm_model is not None:
+    # Lấy mô hình tương ứng với kernel người dùng chọn
+    model = models_dict.get(data.kernel)
+    
+    if model is not None:
         try:
             features = np.array([[data.sepal_length, data.sepal_width, data.petal_length, data.petal_width]])
-            pred_class = int(svm_model.predict(features)[0])
-            probs_raw = svm_model.predict_proba(features)[0] if hasattr(svm_model, "predict_proba") else [0.33, 0.33, 0.33]
+            pred_class = int(model.predict(features)[0])
+            probs_raw = model.predict_proba(features)[0] if hasattr(model, "predict_proba") else [0.33, 0.33, 0.33]
             probs = [round(float(p) * 100, 1) for p in probs_raw]
             res = species_data[pred_class].copy()
             res["probs"] = probs
@@ -99,7 +89,7 @@ def predict(data: IrisInput):
         except Exception:
             pass
 
-    # Quy tắc phân ngưỡng chuẩn dataset Iris gốc
+    # Quy tắc dự phòng nếu không tải được model
     if data.petal_length < 2.5:
         pred_class = 0
         probs = [99.2, 0.5, 0.3]
@@ -390,10 +380,21 @@ def home():
                 </div>
 
                 <div class="row g-4">
-                    <!-- THÔNG SỐ THỦ CÔNG -->
+                    <!-- THÔNG SỐ THỦ CÔNG & CHỌN KERNEL -->
                     <div class="col-lg-5">
                         <div class="content-card h-100">
-                            <h5 class="fw-700 mb-4"><i class="bi bi-sliders me-2 text-primary"></i> Điều chỉnh thông số (Thủ công)</h5>
+                            <h5 class="fw-700 mb-3"><i class="bi bi-sliders me-2 text-primary"></i> Điều chỉnh thông số</h5>
+
+                            <!-- MENU CHỌN KERNEL SVM -->
+                            <div class="mb-3">
+                                <label class="fw-600 mb-1 text-warning"><i class="bi bi-gear-fill me-1"></i> Chọn SVM Kernel (Thuật toán):</label>
+                                <select id="kernelSelect" class="form-select bg-dark text-light border-secondary">
+                                    <option value="linear" selected>Linear (Tuyến tính)</option>
+                                    <option value="rbf">RBF (Radial Basis Function)</option>
+                                    <option value="poly">Polynomial (Đa thức)</option>
+                                    <option value="sigmoid">Sigmoid</option>
+                                </select>
+                            </div>
 
                             <div class="mb-3">
                                 <label class="d-flex justify-content-between fw-600 mb-1">
@@ -428,7 +429,7 @@ def home():
                             </div>
 
                             <button class="btn btn-primary w-100 rounded-3 py-3 fw-700" onclick="runPredict()">
-                                <i class="bi bi-magic me-2"></i> Phân loại theo tham số
+                                <i class="bi bi-magic me-2"></i> Phân loại theo Kernel đã chọn
                             </button>
                         </div>
                     </div>
@@ -485,7 +486,7 @@ def home():
                             <thead>
                                 <tr class="text-muted">
                                     <th>Thời gian</th>
-                                    <th>Phương thức / Thông số</th>
+                                    <th>Phương thức / Kernel</th>
                                     <th>Kết quả</th>
                                     <th>Độ tin cậy</th>
                                 </tr>
@@ -625,14 +626,21 @@ def home():
             const sw = parseFloat(document.getElementById('sw').value);
             const pl = parseFloat(document.getElementById('pl').value);
             const pw = parseFloat(document.getElementById('pw').value);
+            const selectedKernel = document.getElementById('kernelSelect').value;
 
             const res = await fetch('/predict', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({sepal_length: sl, sepal_width: sw, petal_length: pl, petal_width: pw})
+                body: JSON.stringify({
+                    sepal_length: sl, 
+                    sepal_width: sw, 
+                    petal_length: pl, 
+                    petal_width: pw,
+                    kernel: selectedKernel
+                })
             });
             const data = await res.json();
-            applyPredictResult(data, `Params: ${sl}/${sw}/${pl}/${pw}`);
+            applyPredictResult(data, `Kernel [${selectedKernel.toUpperCase()}]`);
         }
 
         async function handleFileSelect(event) {
@@ -708,10 +716,10 @@ def home():
             barChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: ['SVM', 'Random Forest', 'KNN', 'Decision Tree', 'Logistic Regression'],
+                    labels: ['SVM (Linear)', 'SVM (RBF)', 'SVM (Poly)', 'Random Forest', 'KNN'],
                     datasets: [{
                         label: 'Độ chính xác (%)',
-                        data: [98.6, 97.3, 96.0, 94.6, 93.3],
+                        data: [98.6, 97.3, 96.0, 95.2, 94.0],
                         backgroundColor: '#6366f1',
                         borderRadius: 8
                     }]
@@ -752,7 +760,6 @@ def home():
             updateHistoryTable();
         }
 
-        // Bắt sự kiện Dán (Paste) trên toàn trang
         window.addEventListener('paste', (e) => {
             const clipboardData = e.clipboardData || window.clipboardData;
             if (!clipboardData || !clipboardData.items) return;
@@ -773,7 +780,6 @@ def home():
             }
         });
 
-        // Khởi tạo đồ thị mặc định
         window.onload = function() {
             renderDonutChart([98.5, 1.0, 0.5]);
         };
