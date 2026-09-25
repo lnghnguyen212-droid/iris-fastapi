@@ -9,9 +9,12 @@ from pydantic import BaseModel
 
 app = FastAPI(title="IrisClassifier Pro Dashboard")
 
-# 1. Nạp mô hình SVM cho luồng nhập thông số thủ công
+# Trong app.py
 try:
-    svm_model = joblib.load("svm_model.pkl")
+    # Nạp dictionary chứa các kernel
+    models_dict = joblib.load("svm_multi_kernels.pkl")
+    # Mặc định lấy kernel rbf hoặc linear để dự đoán
+    svm_model = models_dict.get("rbf", models_dict.get("linear"))
 except Exception:
     svm_model = None
 
