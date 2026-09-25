@@ -4,7 +4,7 @@ function switchTab(tabId, element) {
     document.querySelectorAll('.nav-item-link').forEach(el => el.classList.remove('active'));
     if (element) element.classList.add('active');
 
-    if (tabId === 'tab-home') {
+    if (tabId === 'tab-home') { 
         document.getElementById('tab-home').style.display = 'block';
         document.getElementById('tab-predict-section').style.display = 'block';
         document.querySelectorAll('.tab-section').forEach(el => {
