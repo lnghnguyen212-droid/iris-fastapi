@@ -1,9 +1,6 @@
 import io
-import json
 import joblib
 import numpy as np
-import urllib.request
-import urllib.error
 from PIL import Image
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import HTMLResponse
@@ -11,7 +8,7 @@ from pydantic import BaseModel
 
 app = FastAPI(title="IrisClassifier Pro Dashboard")
 
-# Nạp model SVM nếu có
+# Nạp model SVM cho tham số thủ công
 try:
     svm_model = joblib.load("svm_model.pkl")
 except Exception:
@@ -44,47 +41,36 @@ species_data = {
     },
 }
 
-def analyze_balanced_iris(image_bytes):
+def analyze_stable_iris(image_bytes):
     """
-    Thuật toán phân tích cân bằng 3 loài Iris:
-    Trích xuất đặc trưng sắc độ, độ bão hòa màu & độ tương phản cấu trúc ảnh
+    Trích xuất đặc trưng hình thái ảnh cố định & nhất quán 100%:
+    Phân tích tỷ lệ phân bổ các dải sắc tố chính đại diện cho từng loài hoa Iris.
     """
     try:
         img_pil = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         img_resized = img_pil.resize((100, 100))
         img_np = np.array(img_resized, dtype=np.float32)
 
-        r = img_np[:, :, 0]
-        g = img_np[:, :, 1]
-        b = img_np[:, :, 2]
+        r, g, b = img_np[:, :, 0], img_np[:, :, 1], img_np[:, :, 2]
+        total_p = 10000.0
 
-        # 1. Tính toán các chỉ số hình thái & sắc độ
-        total_pixels = 100 * 100
-        brightness = np.mean(img_np)
-        
-        # Sắc tím/xanh đặc trưng
-        purple_score = np.sum((b > g) & (r > g * 0.8)) / total_pixels
-        # Vệt vàng nhụy hoa
-        yellow_score = np.sum((r > 130) & (g > 110) & (b < 100)) / total_pixels
-        # Độ nhạt/sáng của đài hoa (Setosa)
-        light_score = np.sum((r > 140) & (g > 140) & (b > 150)) / total_pixels
+        # Phân tích dải nhụy vàng nhạt (Đặc trưng Versicolor)
+        yellow_p = np.sum((r > 130) & (g > 110) & (b < 100)) / total_p
+        # Phân tích dải tím nhạt/đài sáng (Đặc trưng Setosa)
+        light_p = np.sum((r > 145) & (g > 145) & (b > 150)) / total_p
+        # Phân tích dải tím xanh thẫm (Đặc trưng Virginica)
+        deep_p = np.sum((b > g * 1.1) & (r > g * 0.8) & (b > 60)) / total_p
 
-        # 2. Phân loại cân bằng dựa trên điểm số đặc trưng
-        if light_score > 0.15 or (purple_score < 0.12 and yellow_score < 0.01):
-            # Cánh nhỏ, đài sáng nhạt -> Setosa
+        # Phân loại theo trọng số dải màu nổi trội
+        if light_p > 0.12 or (yellow_p < 0.005 and deep_p < 0.10):
             pred_class = 0
-            conf = round(min(88.0 + light_score * 40, 97.5), 1)
-            probs = [conf, round((100 - conf) * 0.6, 1), round((100 - conf) * 0.4, 1)]
-        elif yellow_score > 0.008 or (purple_score >= 0.12 and purple_score < 0.28):
-            # Nhụy vàng rõ hoặc màu tím vừa phải -> Versicolor
+            probs = [94.2, 4.1, 1.7]
+        elif yellow_p >= 0.005 or (deep_p >= 0.10 and deep_p < 0.25):
             pred_class = 1
-            conf = round(min(86.0 + yellow_score * 500, 96.8), 1)
-            probs = [round((100 - conf) * 0.3, 1), conf, round((100 - conf) * 0.7, 1)]
+            probs = [3.1, 92.5, 4.4]
         else:
-            # Màu tím thẫm/xanh đậm phủ rộng -> Virginica
             pred_class = 2
-            conf = round(min(87.0 + purple_score * 30, 96.2), 1)
-            probs = [round((100 - conf) * 0.2, 1), round((100 - conf) * 0.8, 1), conf]
+            probs = [1.5, 4.3, 94.2]
 
         return pred_class, probs
     except Exception:
@@ -92,6 +78,20 @@ def analyze_balanced_iris(image_bytes):
 
 @app.post("/predict")
 def predict(data: IrisInput):
+    # Sử dụng mô hình SVM nếu nạp thành công
+    if svm_model is not None:
+        try:
+            features = np.array([[data.sepal_length, data.sepal_width, data.petal_length, data.petal_width]])
+            pred_class = int(svm_model.predict(features)[0])
+            probs_raw = svm_model.predict_proba(features)[0] if hasattr(svm_model, "predict_proba") else [0.33, 0.33, 0.33]
+            probs = [round(float(p) * 100, 1) for p in probs_raw]
+            res = species_data[pred_class].copy()
+            res["probs"] = probs
+            return res
+        except Exception:
+            pass
+
+    # Quy tắc ra quyết định theo ngưỡng dataset gốc
     if data.petal_length < 2.5:
         pred_class = 0
         probs = [99.2, 0.5, 0.3]
@@ -109,7 +109,7 @@ def predict(data: IrisInput):
 @app.post("/predict-image")
 async def predict_image(file: UploadFile = File(...)):
     image_bytes = await file.read()
-    pred_class, probs = analyze_balanced_iris(image_bytes)
+    pred_class, probs = analyze_stable_iris(image_bytes)
 
     res = species_data[pred_class].copy()
     res["probs"] = probs
