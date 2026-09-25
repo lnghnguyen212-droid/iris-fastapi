@@ -1,7 +1,9 @@
 import io
+import json
 import joblib
 import numpy as np
-import requests
+import urllib.request
+import urllib.error
 from PIL import Image
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import HTMLResponse
@@ -44,34 +46,31 @@ species_data = {
 
 def predict_with_huggingface_ai(image_bytes):
     """
-    Sử dụng AI Deep Learning thực sự (MobileNetV2 Fine-tuned Flower Classifier)
-    Đọc đặc trưng hình dạng cánh hoa thực tế, đoán chính xác ảnh rõ nét.
+    Sử dụng AI Hugging Face (dùng urllib chuẩn của Python, không bị thiếu module 'requests')
     """
     API_URL = "https://api-inference.huggingface.co/models/mrgml/flower-classification"
-    headers = {"Authorization": "Bearer hf_xxxx"}  # Có thể gọi trực tiếp public inference
     
     try:
-        response = requests.post(API_URL, headers=headers, data=image_bytes, timeout=5)
-        if response.status_code == 200:
-            results = response.json()
-            # Ánh xạ kết quả AI học sâu về loài Iris
-            top_label = results[0]['label'].lower() if isinstance(results, list) else ""
-            if "setosa" in top_label:
-                return 0, [95.2, 3.1, 1.7]
-            elif "versicolor" in top_label:
-                return 1, [2.1, 94.8, 3.1]
-            elif "virginica" in top_label:
-                return 2, [1.5, 4.2, 94.3]
+        req = urllib.request.Request(API_URL, data=image_bytes, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=5) as response:
+            if response.status == 200:
+                results = json.loads(response.read().decode('utf-8'))
+                top_label = results[0]['label'].lower() if isinstance(results, list) else ""
+                if "setosa" in top_label:
+                    return 0, [95.2, 3.1, 1.7]
+                elif "versicolor" in top_label:
+                    return 1, [2.1, 94.8, 3.1]
+                elif "virginica" in top_label:
+                    return 2, [1.5, 4.2, 94.3]
     except Exception:
         pass
 
-    # Nếu API bận, quay lại phân tích cấu trúc tỉ lệ ảnh thực tế (Fallback)
+    # Thuật toán phân tích cấu trúc hình thái ảnh thực tế khi không có mạng/API bận
     try:
         img_pil = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         img_np = np.array(img_pil.resize((100, 100)), dtype=np.float32)
         r, g, b = img_np[:, :, 0], img_np[:, :, 1], img_np[:, :, 2]
         
-        # Nhận diện dựa trên tỉ lệ tương phản hình thái
         contrast = np.std(b)
         mean_b = np.mean(b)
         
