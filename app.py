@@ -1,4 +1,6 @@
 import io
+import os
+from pathlib import Path
 import joblib
 import numpy as np
 from PIL import Image
@@ -10,9 +12,12 @@ from pydantic import BaseModel
 
 app = FastAPI(title="Iris AI Classifier")
 
-# Khai báo đường dẫn thư mục chứa CSS/JS và HTML
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+# Xác định đường dẫn tuyệt đối đến thư mục chứa app.py
+BASE_DIR = Path(__file__).resolve().parent
+
+# Khai báo đường dẫn thư mục chuẩn xác cho Render
+app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
+templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 # Load model
 try:
