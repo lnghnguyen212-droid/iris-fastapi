@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Phân Loại Hoa Diên Vĩ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body class="bg-dark text-light p-4">
+
+    <div class="container-fluid">
+        <div class="row g-4">
+            <!-- Nhúng Sidebar riêng -->
+            <div class="col-lg-4">
+                {% include 'components/_sidebar.html' %}
+            </div>
+
+            <!-- Nhúng Phần Kết Quả riêng -->
+            <div class="col-lg-8">
+                {% include 'components/_result.html' %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function uploadAndPredictImage(fileBlob) {
+            const selectedKernel = document.getElementById('kernelSelect').value;
+            const formData = new FormData();
+            if (fileBlob) formData.append('image', fileBlob);
+            formData.append('kernel', selectedKernel);
+
+            const response = await fetch('/predict', { method: 'POST', body: formData });
+            const data = await response.json();
+            
+            document.getElementById('resName').innerText = data.name;
+            document.getElementById('resDesc').innerText = data.desc;
+            if (data.img) document.getElementById('resImg').src = data.img;
+            document.getElementById('usedKernelBadge').innerHTML = `<i class="bi bi-cpu me-1"></i> KERNEL: ${data.used_kernel.toUpperCase()}`;
+
+            const probs = data.probs || [0, 0, 0];
+            for (let i = 0; i < 3; i++) {
+                document.getElementById(`prob_${i}`).innerText = probs[i] + '%';
+                document.getElementById(`bar_${i}`).style.width = probs[i] + '%';
+            }
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                document.getElementById('previewImg').src = URL.createObjectURL(file);
+                uploadAndPredictImage(file);
+            }
+        }
+    </script>
+</body>
+</html>
