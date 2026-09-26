@@ -2,45 +2,95 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Phân Loại Hoa Diên Vĩ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phân Loại Hoa Diên Vĩ - SVM</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #0f172a !important; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card { background-color: #1e293b !important; border: 1px solid #334155; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2); }
+        .form-control, .form-select { border-radius: 8px; }
+        .form-control:focus, .form-select:focus { background-color: #0f172a; color: #fff; border-color: #6366f1; }
+        .progress { border-radius: 10px; }
+    </style>
 </head>
-<body class="bg-dark text-light p-4">
+<body class="bg-dark text-light">
 
-    <div class="container-fluid">
+    <div class="container-fluid py-4">
         <div class="row g-4">
-            <!-- Nhúng Sidebar riêng -->
+            <!-- Sidebar Component -->
             <div class="col-lg-4">
                 {% include 'components/_sidebar.html' %}
+
+                <!-- Biểu đồ Ranh giới -->
+                <div class="card p-3">
+                    <h6 class="card-title"><i class="bi bi-graph-up me-2"></i>Ranh Giới Phân Loại SVM</h6>
+                    <div style="height: 200px;">
+                        <canvas id="boundaryChart"></canvas>
+                    </div>
+                </div>
             </div>
 
-            <!-- Nhúng Phần Kết Quả riêng -->
+            <!-- Main Panel Component -->
             <div class="col-lg-8">
                 {% include 'components/_result.html' %}
+
+                <div class="row g-3">
+                    <!-- Biểu đồ độ chính xác -->
+                    <div class="col-md-6">
+                        <div class="card p-3 h-100">
+                            <h6><i class="bi bi-bar-chart-line me-2"></i>Độ Chính Xác Các Mô Hình</h6>
+                            <div style="height: 200px;">
+                                <canvas id="barChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Bảng Lịch sử -->
+                    <div class="col-md-6">
+                        <div class="card p-3 h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="m-0"><i class="bi bi-clock-history me-2"></i>Lịch Sử Thực Hiện</h6>
+                                <button class="btn btn-sm btn-outline-light" onclick="clearHistory()">Xóa</button>
+                            </div>
+                            <div class="table-responsive" style="max-height: 180px; overflow-y: auto;">
+                                <table class="table table-dark table-hover table-sm text-center m-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Thời gian</th>
+                                            <th>Kernel</th>
+                                            <th>Kết quả</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="historyTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+        let boundaryChartInstance = null;
+        let barChartInstance = null;
+        let historyLogs = [];
+
         async function uploadAndPredictImage(fileBlob) {
             const selectedKernel = document.getElementById('kernelSelect').value;
             const formData = new FormData();
             if (fileBlob) formData.append('image', fileBlob);
             formData.append('kernel', selectedKernel);
 
-            const response = await fetch('/predict', { method: 'POST', body: formData });
-            const data = await response.json();
-            
-            document.getElementById('resName').innerText = data.name;
-            document.getElementById('resDesc').innerText = data.desc;
-            if (data.img) document.getElementById('resImg').src = data.img;
-            document.getElementById('usedKernelBadge').innerHTML = `<i class="bi bi-cpu me-1"></i> KERNEL: ${data.used_kernel.toUpperCase()}`;
-
-            const probs = data.probs || [0, 0, 0];
-            for (let i = 0; i < 3; i++) {
-                document.getElementById(`prob_${i}`).innerText = probs[i] + '%';
-                document.getElementById(`bar_${i}`).style.width = probs[i] + '%';
+            try {
+                const response = await fetch('/predict', { method: 'POST', body: formData });
+                const data = await response.json();
+                applyPredictResult(data);
+            } catch (err) {
+                alert("Đã xảy ra lỗi khi kết nối tới Server API!");
             }
         }
 
@@ -51,6 +101,129 @@
                 uploadAndPredictImage(file);
             }
         }
+
+        document.addEventListener('paste', function (e) {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let item of items) {
+                if (item.type.indexOf('image') === 0) {
+                    const blob = item.getAsFile();
+                    document.getElementById('previewImg').src = URL.createObjectURL(blob);
+                    uploadAndPredictImage(blob);
+                    break;
+                }
+            }
+        });
+
+        function applyPredictResult(data) {
+            document.getElementById('resName').innerText = data.name;
+            document.getElementById('resDesc').innerText = data.desc;
+            if (data.img) document.getElementById('resImg').src = data.img;
+            document.getElementById('usedKernelBadge').innerHTML = `<i class="bi bi-cpu me-1"></i> KERNEL: ${data.used_kernel.toUpperCase()}`;
+
+            const probs = data.probs || [0, 0, 0];
+            for (let i = 0; i < 3; i++) {
+                document.getElementById(`prob_${i}`).innerText = probs[i] + '%';
+                document.getElementById(`bar_${i}`).style.width = probs[i] + '%';
+            }
+
+            addHistoryLog(data.used_kernel, data.name);
+            renderBoundaryChart(data.used_kernel);
+        }
+
+        function addHistoryLog(method, resultName) {
+            const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            historyLogs.unshift({ time: timeStr, method: method.toUpperCase(), result: resultName });
+            if (historyLogs.length > 10) historyLogs.pop();
+            renderHistoryTable();
+        }
+
+        function renderHistoryTable() {
+            const tbody = document.getElementById('historyTableBody');
+            if (!tbody) return;
+            if (historyLogs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="text-muted">Chưa có lịch sử</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = historyLogs.map(item => `
+                <tr>
+                    <td>${item.time}</td>
+                    <td><span class="badge bg-secondary">${item.method}</span></td>
+                    <td><strong class="text-warning">${item.result}</strong></td>
+                </tr>
+            `).join('');
+        }
+
+        function clearHistory() {
+            historyLogs = [];
+            renderHistoryTable();
+        }
+
+        function renderBoundaryChart(kernelType) {
+            const ctx = document.getElementById('boundaryChart');
+            if (!ctx) return;
+            if (boundaryChartInstance) boundaryChartInstance.destroy();
+
+            let lineData = [{x: 0, y: 1}, {x: 5, y: 3.5}, {x: 10, y: 6}];
+            if (kernelType === 'rbf') lineData = [{x: 0, y: 1}, {x: 3, y: 5}, {x: 6, y: 2}, {x: 10, y: 1}];
+            if (kernelType === 'poly') lineData = [{x: 0, y: 0.5}, {x: 3, y: 1}, {x: 6, y: 3.5}, {x: 10, y: 9.5}];
+
+            boundaryChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [
+                        {
+                            label: 'Ranh giới (' + kernelType.toUpperCase() + ')',
+                            data: lineData,
+                            borderColor: '#6366f1',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: kernelType === 'linear' ? 0 : 0.4
+                        },
+                        { label: 'Setosa', data: [{x: 1, y: 2}, {x: 2, y: 1.5}], backgroundColor: '#38bdf8', type: 'scatter' },
+                        { label: 'Khác', data: [{x: 7, y: 7.5}, {x: 8, y: 5.5}], backgroundColor: '#f59e0b', type: 'scatter' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { display: false } }
+                }
+            });
+        }
+
+        function renderBarChart() {
+            const ctx = document.getElementById('barChart');
+            if (!ctx) return;
+            if (barChartInstance) barChartInstance.destroy();
+
+            barChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Linear', 'RBF', 'Poly', 'KNN', 'RF'],
+                    datasets: [{
+                        data: [98.0, 96.6, 93.3, 95.3, 96.0],
+                        backgroundColor: ['#6366f1', '#8b5cf6', '#ec4899', '#3b82f6', '#10b981'],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { min: 80, max: 100, ticks: { color: '#94a3b8' } },
+                        x: { ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderBoundaryChart('linear');
+            renderBarChart();
+            renderHistoryTable();
+        });
     </script>
 </body>
 </html>
