@@ -1,7 +1,7 @@
 import io
 import joblib
 import numpy as np
-from PIL import Image
+from PIL import Image 
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
