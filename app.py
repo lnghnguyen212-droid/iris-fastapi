@@ -1,7 +1,7 @@
 import io
 import os
 from pathlib import Path
-import joblib
+import joblib 
 import numpy as np
 from PIL import Image
 from fastapi import FastAPI, File, UploadFile, Request
