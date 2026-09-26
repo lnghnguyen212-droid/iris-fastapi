@@ -1,5 +1,8 @@
-flask
-scikit-learn
-numpy
+fastapi
+uvicorn
+jinja2
+aiofiles
 joblib
-gunicorn
+numpy
+pillow
+scikit-learn
