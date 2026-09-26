@@ -1,7 +1,5 @@
-fastapi
-uvicorn
-jinja2
+flask
 scikit-learn
 numpy
 joblib
-python-multipart
+gunicorn
