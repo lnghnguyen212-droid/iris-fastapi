@@ -10,10 +10,9 @@ app = FastAPI(title="IrisClassifier Full Dashboard")
 
 # Nạp các mô hình Kernel
 try:
-    models_dict = joblib.load("svm_multi_kernels.pkl")
+  models_dict=joblib.load("svm_multi_kernel.pkl")
 except Exception:
-    models_dict = {}
-
+  models_dict={}
 class IrisInput(BaseModel):
     sepal_length: float
     sepal_width: float
