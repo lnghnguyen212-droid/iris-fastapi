@@ -1,6 +1,6 @@
 let barChartInstance = null;
 
-window.onload = function() {
+window.onload = function() { 
     initChart();
     window.addEventListener('paste', e => {
         const items = (e.clipboardData || e.originalEvent.clipboardData).items;
