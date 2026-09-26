@@ -74,7 +74,7 @@ def classify_image_accurately(image_bytes: bytes, filename: str = ""):
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="index.html")
 
 @app.post("/predict")
 def predict(data: IrisInput):
