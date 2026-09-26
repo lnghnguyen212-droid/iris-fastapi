@@ -1,0 +1,23 @@
+<!-- SIDEBAR COMPONENT -->
+<div class="card p-3 mb-3 bg-dark border-secondary text-light">
+    <h5 class="card-title text-primary"><i class="bi bi-sliders me-2"></i>Cấu Hình Mô Hình</h5>
+    
+    <div class="mb-3">
+        <label class="form-label">Chọn Kernel SVM:</label>
+        <select id="kernelSelect" class="form-select bg-dark text-light border-secondary">
+            <option value="linear" selected>Linear (Tuyến tính)</option>
+            <option value="rbf">RBF (Radial Basis Function)</option>
+            <option value="poly">Polynomial (Đa thức)</option>
+        </select>
+    </div>
+    
+    <div class="mb-3">
+        <label class="form-label">Tải/Dán Ảnh Hoa Iris:</label>
+        <input type="file" id="imageInput" class="form-control bg-dark text-light border-secondary" accept="image/*" onchange="handleFileSelect(event)">
+        <small class="text-muted mt-1 d-block">Hoặc bấm <strong>Ctrl + V</strong> để dán ảnh.</small>
+    </div>
+
+    <div class="text-center mt-2">
+        <img id="previewImg" src="https://via.placeholder.com/150" class="img-thumbnail bg-dark border-secondary rounded" style="max-height: 150px;" alt="Preview">
+    </div>
+</div>
