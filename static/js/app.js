@@ -1,7 +1,9 @@
 let barChartInstance = null;
 
-window.onload = function() { 
+window.onload = function() {
     initChart();
+    updatePredict(); // Chạy dự đoán lần đầu khi vừa mở trang
+
     window.addEventListener('paste', e => {
         const items = (e.clipboardData || e.originalEvent.clipboardData).items;
         for (let item of items) {
@@ -18,10 +20,10 @@ function initChart() {
     barChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ['Linear', 'RBF', 'Poly', 'KNN', 'RF'],
+            labels: ['Linear', 'RBF', 'Poly', 'Sigmoid'],
             datasets: [{
-                data: [98, 96, 93, 95, 96],
-                backgroundColor: ['#6366f1', '#a855f7', '#ec4899', '#3b82f6', '#10b981'],
+                data: [98.5, 96.2, 92.4, 75.0],
+                backgroundColor: ['#38bdf8', '#a855f7', '#ec4899', '#f59e0b'],
                 borderRadius: 6
             }]
         },
@@ -30,7 +32,7 @@ function initChart() {
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                y: { min: 80, max: 100, grid: { color: '#232d42' }, ticks: { color: '#94a3b8' } },
+                y: { min: 50, max: 100, grid: { color: '#232d42' }, ticks: { color: '#94a3b8' } },
                 x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
             }
         }
@@ -40,6 +42,38 @@ function initChart() {
 function onKernelChange() {
     const k = document.getElementById('kernelSelect').value.toUpperCase();
     document.getElementById('kernelBadge').innerText = 'KERNEL: ' + k;
+    updatePredict();
+}
+
+async function updatePredict() {
+    const sl = parseFloat(document.getElementById('sepal_length').value);
+    const sw = parseFloat(document.getElementById('sepal_width').value);
+    const pl = parseFloat(document.getElementById('petal_length').value);
+    const pw = parseFloat(document.getElementById('petal_width').value);
+    const kernel = document.getElementById('kernelSelect').value;
+
+    document.getElementById('sl_val').innerText = sl + ' cm';
+    document.getElementById('sw_val').innerText = sw + ' cm';
+    document.getElementById('pl_val').innerText = pl + ' cm';
+    document.getElementById('pw_val').innerText = pw + ' cm';
+
+    try {
+        const res = await fetch('/predict', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sepal_length: sl,
+                sepal_width: sw,
+                petal_length: pl,
+                petal_width: pw,
+                kernel: kernel
+            })
+        });
+        const data = await res.json();
+        updateUI(data);
+    } catch (err) {
+        console.error("Lỗi gửi dữ liệu:", err);
+    }
 }
 
 async function handleFileSelect(event) {
