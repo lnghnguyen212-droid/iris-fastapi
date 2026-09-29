@@ -5,7 +5,23 @@ from PIL import Image
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
+from fastapi import FastAPI, Form
+from auth import register_user, login_user
+from database import init_db
 
+# Khởi tạo DB khi chạy ứng dụng
+init_db()
+
+# Bổ sung 2 đường dẫn này vào file main.py hiện tại của bạn
+@app.post("/api/register")
+def handle_register(username: str = Form(...), password: str = Form(...)):
+    success, message = register_user(username, password)
+    return {"success": success, "message": message}
+
+@app.post("/api/login")
+def handle_login(username: str = Form(...), password: str = Form(...)):
+    success, message = login_user(username, password)
+    return {"success": success, "message": message}
 app = FastAPI(title="IrisClassifier Full Dashboard")
 
 # Nạp các mô hình Kernel
