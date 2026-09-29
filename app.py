@@ -2,13 +2,15 @@ import io
 import joblib
 import numpy as np
 from PIL import Image
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, Request, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from fastapi import FastAPI, Form
 from auth import register_user, login_user
 from database import init_db
 app = FastAPI(title="IrisClassifier Full Dashboard")
+from starlette.middleware.sessions import SessionMiddleware
+app.add_middleware(SessionMiddleware, secret_key="iris-classifier-secret-key-2026")
 # Khởi tạo DB khi chạy ứng dụng
 init_db()
 
@@ -74,7 +76,9 @@ def classify_image_accurately(image_bytes: bytes, filename: str = ""):
         return 0, [98.5, 1.0, 0.5]
 
 @app.post("/predict")
-def predict(data: IrisInput):
+def predict(data: IrisInput, request: Request):
+    if not request.session.get("user"):
+        raise HTTPException(status_code=401, detail="Vui lòng đăng nhập trước khi phân loại!")
     model = models_dict.get(data.kernel)
     
     if model is not None:
@@ -113,7 +117,9 @@ def predict(data: IrisInput):
     return res
 
 @app.post("/predict-image")
-async def predict_image(file: UploadFile = File(...)):
+async def predict_image(request: Request, file: UploadFile = File(...)):
+    if not request.session.get("user"):
+        raise HTTPException(status_code=401, detail="Vui lòng đăng nhập trước khi phân loại!")
     image_bytes = await file.read()
     pred_class, probs = classify_image_accurately(image_bytes, file.filename)
 
@@ -302,6 +308,56 @@ def home():
     </head>
     <body>
 
+    <!-- MODAL ĐĂNG NHẬP / ĐĂNG KÝ -->
+    <div id="authModal" style="display:flex; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.78); align-items:center; justify-content:center;">
+        <div class="content-card" style="width:420px; max-width:92%; position:relative;">
+            <button onclick="closeAuthModal()" class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-3" style="border-radius:50%;">&times;</button>
+
+            <div class="text-center mb-4">
+                <i class="bi bi-flower1 fs-1 text-primary"></i>
+                <h4 class="fw-800 mt-2 mb-1">IrisClassifier</h4>
+                <p class="text-muted small mb-0">Đăng nhập để sử dụng chức năng phân loại</p>
+            </div>
+
+            <div class="d-flex gap-2 mb-4">
+                <button class="btn btn-primary flex-fill" onclick="showAuthTab('login')">Đăng nhập</button>
+                <button class="btn btn-outline-primary flex-fill" onclick="showAuthTab('register')">Đăng ký</button>
+            </div>
+
+            <div id="loginFormBox">
+                <div class="mb-3">
+                    <label class="form-label">Tên đăng nhập</label>
+                    <input id="loginUsername" type="text" class="form-control bg-dark text-light border-secondary" placeholder="Nhập tên đăng nhập">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Mật khẩu</label>
+                    <input id="loginPassword" type="password" class="form-control bg-dark text-light border-secondary" placeholder="Nhập mật khẩu">
+                </div>
+                <button class="btn btn-primary w-100 rounded-pill" onclick="loginUser()">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập
+                </button>
+            </div>
+
+            <div id="registerFormBox" style="display:none;">
+                <div class="mb-3">
+                    <label class="form-label">Tên đăng nhập</label>
+                    <input id="registerUsername" type="text" class="form-control bg-dark text-light border-secondary" placeholder="Tạo tên đăng nhập">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Mật khẩu</label>
+                    <input id="registerPassword" type="password" class="form-control bg-dark text-light border-secondary" placeholder="Tạo mật khẩu">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Xác nhận mật khẩu</label>
+                    <input id="registerConfirmPassword" type="password" class="form-control bg-dark text-light border-secondary" placeholder="Nhập lại mật khẩu">
+                </div>
+                <button class="btn btn-success w-100 rounded-pill" onclick="registerUser()">
+                    <i class="bi bi-person-plus me-2"></i>Đăng ký tài khoản
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="app-wrapper">
         <!-- SIDEBAR CHỨA ĐỦ 6 TAB BAN ĐẦU -->
         <aside class="sidebar">
@@ -319,8 +375,15 @@ def home():
                     <li><a class="nav-item-link" onclick="switchTab('tab-stats', this)"><i class="bi bi-bar-chart"></i> Thống kê</a></li>
                 </ul>
             </div>
-            <div class="p-2 text-center text-muted small">
-                <p class="m-0">Iris AI Suite v2.5</p>
+            <div class="p-2 text-center">
+                <div class="small text-muted mb-2">
+                    <i class="bi bi-person-circle me-1"></i>
+                    <span id="currentUser">Chưa đăng nhập</span>
+                </div>
+                <button class="btn btn-outline-danger btn-sm rounded-pill w-100 mb-2" onclick="logoutUser()">
+                    <i class="bi bi-box-arrow-right me-1"></i> Đăng xuất
+                </button>
+                <p class="m-0 text-muted small">Iris AI Suite v2.5</p>
             </div>
         </aside>
 
@@ -340,7 +403,7 @@ def home():
             </div>
 
             <!-- TAB PHÂN LOẠI -->
-            <div id="tab-predict-section" class="tab-section active">
+            <div id="tab-predict-section" class="tab-section">
                 <div class="content-card mb-4">
                     <h5 class="fw-700 mb-1">Phân loại hoa Iris bằng hình ảnh</h5>
                     <p class="text-muted small mb-3">Tải ảnh lên hoặc dán ảnh từ clipboard (Ctrl + V) để bắt đầu</p>
@@ -587,13 +650,120 @@ def home():
         let barChartInstance = null;
         let historyLogs = [];
 
+        let isLoggedIn = false;
+
+        function openAuthModal() {
+            const modal = document.getElementById('authModal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeAuthModal() {
+            const modal = document.getElementById('authModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function showAuthTab(type) {
+            document.getElementById('loginFormBox').style.display = type === 'login' ? 'block' : 'none';
+            document.getElementById('registerFormBox').style.display = type === 'register' ? 'block' : 'none';
+        }
+
+        async function loginUser() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!username || !password) {
+                alert('Vui lòng nhập đầy đủ tài khoản và mật khẩu!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('username', username);
+            formData.append('password', password);
+
+            const res = await fetch('/api/login', { method: 'POST', body: formData });
+            const data = await res.json();
+
+            if (data.success) {
+                isLoggedIn = true;
+                document.getElementById('currentUser').innerText = username;
+                closeAuthModal();
+                alert(data.message);
+                switchTab('tab-predict-section', document.querySelectorAll('.nav-item-link')[1]);
+            } else {
+                alert(data.message);
+            }
+        }
+
+        async function registerUser() {
+            const username = document.getElementById('registerUsername').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerConfirmPassword').value;
+
+            if (!username || !password) {
+                alert('Vui lòng nhập đầy đủ thông tin!');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                alert('Mật khẩu xác nhận không khớp!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('username', username);
+            formData.append('password', password);
+
+            const res = await fetch('/api/register', { method: 'POST', body: formData });
+            const data = await res.json();
+
+            if (data.success) {
+                alert(data.message + ' Hãy đăng nhập để tiếp tục.');
+                document.getElementById('loginUsername').value = username;
+                document.getElementById('loginPassword').value = '';
+                showAuthTab('login');
+            } else {
+                alert(data.message);
+            }
+        }
+
+        async function logoutUser() {
+            const res = await fetch('/api/logout', { method: 'POST' });
+            const data = await res.json();
+
+            if (data.success) {
+                isLoggedIn = false;
+                document.getElementById('currentUser').innerText = 'Chưa đăng nhập';
+                switchTab('tab-home', document.querySelectorAll('.nav-item-link')[0]);
+                alert('Đã đăng xuất!');
+            }
+        }
+
+        async function checkLoginStatus() {
+            try {
+                const res = await fetch('/api/me');
+                const data = await res.json();
+                isLoggedIn = data.logged_in;
+
+                if (isLoggedIn) {
+                    document.getElementById('currentUser').innerText = data.username;
+                }
+            } catch (e) {
+                isLoggedIn = false;
+            }
+        }
+
         function switchTab(tabId, element) {
+            if (tabId === 'tab-predict-section' && !isLoggedIn) {
+                openAuthModal();
+                return;
+            }
+
             document.querySelectorAll('.nav-item-link').forEach(el => el.classList.remove('active'));
             if(element) element.classList.add('active');
 
             if(tabId === 'tab-home') {
                 document.getElementById('tab-home').style.display = 'block';
-                document.getElementById('tab-predict-section').style.display = 'block';
+                document.getElementById('tab-predict-section').style.display = isLoggedIn ? 'block' : 'none';
                 document.querySelectorAll('.tab-section').forEach(el => {
                     if(el.id !== 'tab-home' && el.id !== 'tab-predict-section') el.style.display = 'none';
                 });
@@ -617,6 +787,10 @@ def home():
         }
 
         async function runPredict() {
+            if (!isLoggedIn) {
+                openAuthModal();
+                return;
+            }
             const sl = parseFloat(document.getElementById('sl').value);
             const sw = parseFloat(document.getElementById('sw').value);
             const pl = parseFloat(document.getElementById('pl').value);
@@ -641,6 +815,10 @@ def home():
         }
 
         async function uploadAndPredictImage(file) {
+            if (!isLoggedIn) {
+                openAuthModal();
+                return;
+            }
             const formData = new FormData();
             formData.append('file', file);
 
@@ -808,7 +986,9 @@ def home():
             }
         });
 
-        window.onload = function() {
+        window.onload = async function() {
+            await checkLoginStatus();
+            document.getElementById('tab-predict-section').style.display = isLoggedIn ? 'block' : 'none';
             renderBoundaryChart('linear');
         };
     </script>
@@ -821,8 +1001,25 @@ def handle_register(username: str = Form(...), password: str = Form(...)):
     return {"success": success, "message": message}
 
 @app.post("/api/login")
-def handle_login(username: str = Form(...), password: str = Form(...)):
+def handle_login(request: Request, username: str = Form(...), password: str = Form(...)):
     success, message = login_user(username, password)
+
+    if success:
+        request.session["user"] = username
+
     return {"success": success, "message": message}
 
 
+@app.get("/api/me")
+def get_current_user(request: Request):
+    username = request.session.get("user")
+    return {
+        "logged_in": bool(username),
+        "username": username
+    }
+
+
+@app.post("/api/logout")
+def logout_user(request: Request):
+    request.session.clear()
+    return {"success": True, "message": "Đã đăng xuất!"}
