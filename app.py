@@ -815,7 +815,7 @@ def home():
     </body>
     </html>
     """
-    @app.post("/api/register")
+@app.post("/api/register")
 def handle_register(username: str = Form(...), password: str = Form(...)):
     success, message = register_user(username, password)
     return {"success": success, "message": message}
