@@ -9,5 +9,5 @@ pillow
 scikit-learn
 python-multipart
 itsdangerous
-
+psycopg2-binary
 
