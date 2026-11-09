@@ -711,4 +711,224 @@ def home():
         }
 
         async function loginUser() {
-            const username = document
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if(!username || !password) {
+                alert("Vui lòng nhập tên đăng nhập và mật khẩu!");
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append("username", username);
+                formData.append("password", password);
+
+                const res = await fetch("/login", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if(res.ok) {
+                    document.getElementById('currentUser').innerText = username;
+                    closeAuthModal();
+                    alert("Đăng nhập thành công!");
+                } else {
+                    alert("Sai tên đăng nhập hoặc mật khẩu!");
+                }
+            } catch(e) {
+                alert("Lỗi kết nối đến máy chủ!");
+            }
+        }
+
+        async function logoutUser() {
+            try {
+                await fetch("/logout", { method: "POST" });
+                document.getElementById('currentUser').innerText = "Chưa đăng nhập";
+                document.getElementById('authModal').style.display = 'flex';
+                alert("Đã đăng xuất!");
+            } catch(e) {
+                alert("Lỗi khi đăng xuất!");
+            }
+        }
+
+        async function runPredict() {
+            const data = {
+                sepal_length: parseFloat(document.getElementById('sl').value),
+                sepal_width: parseFloat(document.getElementById('sw').value),
+                petal_length: parseFloat(document.getElementById('pl').value),
+                petal_width: parseFloat(document.getElementById('pw').value),
+                kernel: document.getElementById('kernelSelect').value
+            };
+
+            try {
+                const res = await fetch("/predict", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                });
+
+                if(res.status === 401) {
+                    document.getElementById('authModal').style.display = 'flex';
+                    alert("Vui lòng đăng nhập trước khi phân loại!");
+                    return;
+                }
+
+                const result = await res.json();
+                updateResultUI(result);
+                addHistoryRow(result.used_kernel, result.name);
+            } catch(e) {
+                alert("Lỗi khi gọi API phân loại!");
+            }
+        }
+
+        function updateResultUI(res) {
+            document.getElementById('resName').innerText = res.name;
+            document.getElementById('resDesc').innerText = res.desc;
+            document.getElementById('resImg').src = res.img;
+            document.getElementById('usedKernelBadge').innerHTML = `<i class="bi bi-gear-wide-connected me-1"></i> Kernel: ${res.used_kernel}`;
+            document.getElementById('kernelPlotTitle').innerText = res.used_kernel;
+
+            const probs = res.probs;
+            document.getElementById('prob_0').innerText = probs[0] + "%";
+            document.getElementById('bar_0').style.width = probs[0] + "%";
+
+            document.getElementById('prob_1').innerText = probs[1] + "%";
+            document.getElementById('bar_1').style.width = probs[1] + "%";
+
+            document.getElementById('prob_2').innerText = probs[2] + "%";
+            document.getElementById('bar_2').style.width = probs[2] + "%";
+        }
+
+        function onKernelChange() {
+            const val = document.getElementById('kernelSelect').value.toUpperCase();
+            document.getElementById('kernelPlotTitle').innerText = val;
+        }
+
+        async function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                const res = await fetch("/predict-image", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if(res.status === 401) {
+                    document.getElementById('authModal').style.display = 'flex';
+                    alert("Vui lòng đăng nhập trước khi phân loại ảnh!");
+                    return;
+                }
+
+                const result = await res.json();
+                updateResultUI(result);
+                addHistoryRow("IMAGE_ANALYSIS", result.name);
+            } catch(e) {
+                alert("Lỗi khi phân loại ảnh!");
+            }
+        }
+
+        function addHistoryRow(method, resultName) {
+            const tbody = document.getElementById('historyTableBody');
+            const now = new Date().toLocaleTimeString();
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${now}</td>
+                <td><span class="badge bg-secondary">${method}</span></td>
+                <td><strong class="text-primary">${resultName}</strong></td>
+            `;
+            tbody.prepend(tr);
+        }
+
+        function clearHistory() {
+            document.getElementById('historyTableBody').innerHTML = "";
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const ctxBoundary = document.getElementById('boundaryChart').getContext('2d');
+            new Chart(ctxBoundary, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Ranh giới phân loại SVM',
+                        data: [{x: 1.4, y: 0.2}, {x: 4.5, y: 1.5}, {x: 6.0, y: 2.5}],
+                        backgroundColor: '#6366f1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: '#2d3748' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: '#2d3748' }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+
+            const ctxAcc = document.getElementById('accuracyChart').getContext('2d');
+            new Chart(ctxAcc, {
+                type: 'bar',
+                data: {
+                    labels: ['Linear', 'RBF', 'Polynomial', 'Sigmoid'],
+                    datasets: [{
+                        label: 'Độ chính xác (%)',
+                        data: [98.6, 97.2, 95.5, 78.0],
+                        backgroundColor: ['#6366f1', '#a855f7', '#3b82f6', '#ef4444'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: '#2d3748' }, ticks: { color: '#94a3b8' }, max: 100 }
+                    }
+                }
+            });
+        });
+
+        const pasteZone = document.getElementById('pasteZone');
+        if(pasteZone) {
+            pasteZone.addEventListener('paste', async (e) => {
+                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                for (let item of items) {
+                    if (item.type.indexOf('image') === 0) {
+                        const blob = item.getAsFile();
+                        const formData = new FormData();
+                        formData.append("file", blob, "pasted_image.png");
+
+                        try {
+                            const res = await fetch("/predict-image", {
+                                method: "POST",
+                                body: formData
+                            });
+                            if(res.status === 401) {
+                                document.getElementById('authModal').style.display = 'flex';
+                                alert("Vui lòng đăng nhập trước khi phân loại ảnh!");
+                                return;
+                            }
+                            const result = await res.json();
+                            updateResultUI(result);
+                            addHistoryRow("PASTED_IMAGE", result.name);
+                            alert("Đã phân loại ảnh dán từ clipboard thành công!");
+                        } catch(err) {
+                            alert("Lỗi khi xử lý ảnh dán!");
+                        }
+                        break;
+                    }
+                }
+            });
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    </body>
+    </html>
+    """
+    
