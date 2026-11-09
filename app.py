@@ -1027,4 +1027,4 @@ def get_current_user(request: Request):
 @app.post("/api/logout")
 def logout_user(request: Request):
     request.session.clear()
-    return {"success": True, "message": "Đã đăng xuất!"}. bạn sửa lại vào code này đi cái code kia nó chỉ hiện mỗi giao diện chẳng có gì cả ấy
+    return {"success": True, "message": "Đã đăng xuất!"}
