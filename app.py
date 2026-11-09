@@ -2,23 +2,23 @@ import io
 import joblib
 import numpy as np
 from PIL import Image
-from fastapi import FastAPI, File, UploadFile, Request, HTTPException
+from fastapi import FastAPI, File, UploadFile, Request, HTTPException, Form
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-from fastapi import FastAPI, Form
-from auth import register_user, login_user
-from database import init_db
-app = FastAPI(title="IrisClassifier Full Dashboard")
 from starlette.middleware.sessions import SessionMiddleware
+from auth import register_user, login_user
+from database import init_db, engine, Base
+
+# Khởi tạo ứng dụng FastAPI đặt lên đầu
+app = FastAPI(title="IrisClassifier Full Dashboard")
+
+# Cấu hình SessionMiddleware
 app.add_middleware(SessionMiddleware, secret_key="iris-classifier-secret-key-2026")
-from fastapi import FastAPI
-from database import engine, Base  # Import engine và Base từ file kết nối db của bạn
-import models  # Import file khai báo các class model (chứa model User)
 
-app = FastAPI()
-# Khởi tạo DB khi chạy ứng dụng
-init_db()
-
+# Thêm hàm startup_event gọi init_db()
+@app.on_event("startup")
+def startup_event():
+    init_db()
 
 # Nạp các mô hình Kernel
 try:
@@ -302,13 +302,6 @@ def home():
                 border-color: var(--accent-purple);
                 background-color: rgba(99, 102, 241, 0.1);
             }
-
-            .preview-pasted-img {
-                max-height: 140px;
-                border-radius: 12px;
-                border: 1px solid var(--border-color);
-                margin-top: 10px;
-            }
         </style>
     </head>
     <body>
@@ -364,7 +357,7 @@ def home():
     </div>
 
     <div class="app-wrapper">
-        <!-- SIDEBAR CHỨA ĐỦ 6 TAB BAN ĐẦU -->
+        <!-- SIDEBAR -->
         <aside class="sidebar">
             <div>
                 <a href="#" class="sidebar-brand">
@@ -634,397 +627,88 @@ def home():
                     </div>
                     <div class="col-md-4">
                         <div class="content-card text-center py-4">
-                            <h3 class="fw-800 text-warning">SVM</h3>
-                            <span class="text-light">Mô hình AI tốt nhất</span>
+                            <h3 class="fw-800 text-warning">4</h3>
+                            <span class="text-light">Loại Kernel SVM hỗ trợ</span>
                         </div>
                     </div>
                 </div>
+
                 <div class="content-card">
-                    <h5 class="fw-700 mb-3"><i class="bi bi-bar-chart me-2 text-primary"></i> So sánh hiệu năng các thuật toán</h5>
-                    <div style="height: 250px;">
-                        <canvas id="barChart"></canvas>
+                    <h5 class="fw-700 mb-3"><i class="bi bi-bar-chart-fill me-2 text-primary"></i> Biểu đồ so sánh độ chính xác các Kernel SVM</h5>
+                    <div style="height: 280px; position: relative;">
+                        <canvas id="accuracyChart"></canvas>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SCRIPT XỬ LÝ GIAO DIỆN VÀ API -->
     <script>
-        let boundaryChartInstance = null;
-        let barChartInstance = null;
-        let historyLogs = [];
-
-        let isLoggedIn = false;
-
-        function openAuthModal() {
-            const modal = document.getElementById('authModal');
-            if (modal) modal.style.display = 'flex';
-        }
-
-        function closeAuthModal() {
-            const modal = document.getElementById('authModal');
-            if (modal) modal.style.display = 'none';
-        }
-
-        function showAuthTab(type) {
-            document.getElementById('loginFormBox').style.display = type === 'login' ? 'block' : 'none';
-            document.getElementById('registerFormBox').style.display = type === 'register' ? 'block' : 'none';
-        }
-
-        async function loginUser() {
-            const username = document.getElementById('loginUsername').value.trim();
-            const password = document.getElementById('loginPassword').value;
-
-            if (!username || !password) {
-                alert('Vui lòng nhập đầy đủ tài khoản và mật khẩu!');
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('username', username);
-            formData.append('password', password);
-
-            const res = await fetch('/api/login', { method: 'POST', body: formData });
-            const data = await res.json();
-
-            if (data.success) {
-                isLoggedIn = true;
-                document.getElementById('currentUser').innerText = username;
-                closeAuthModal();
-                alert(data.message);
-                switchTab('tab-predict-section', document.querySelectorAll('.nav-item-link')[1]);
-            } else {
-                alert(data.message);
-            }
-        }
-
-        async function registerUser() {
-            const username = document.getElementById('registerUsername').value.trim();
-            const password = document.getElementById('registerPassword').value;
-            const confirmPassword = document.getElementById('registerConfirmPassword').value;
-
-            if (!username || !password) {
-                alert('Vui lòng nhập đầy đủ thông tin!');
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                alert('Mật khẩu xác nhận không khớp!');
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('username', username);
-            formData.append('password', password);
-
-            const res = await fetch('/api/register', { method: 'POST', body: formData });
-            const data = await res.json();
-
-            if (data.success) {
-                alert(data.message + ' Hãy đăng nhập để tiếp tục.');
-                document.getElementById('loginUsername').value = username;
-                document.getElementById('loginPassword').value = '';
-                showAuthTab('login');
-            } else {
-                alert(data.message);
-            }
-        }
-
-        async function logoutUser() {
-            const res = await fetch('/api/logout', { method: 'POST' });
-            const data = await res.json();
-
-            if (data.success) {
-                isLoggedIn = false;
-                document.getElementById('currentUser').innerText = 'Chưa đăng nhập';
-                switchTab('tab-home', document.querySelectorAll('.nav-item-link')[0]);
-                alert('Đã đăng xuất!');
-            }
-        }
-
-        async function checkLoginStatus() {
-            try {
-                const res = await fetch('/api/me');
-                const data = await res.json();
-                isLoggedIn = data.logged_in;
-
-                if (isLoggedIn) {
-                    document.getElementById('currentUser').innerText = data.username;
-                }
-            } catch (e) {
-                isLoggedIn = false;
-            }
-        }
-
         function switchTab(tabId, element) {
-            if (tabId === 'tab-predict-section' && !isLoggedIn) {
-                openAuthModal();
-                return;
+            document.querySelectorAll('.tab-section').forEach(sec => sec.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            
+            if(element) {
+                document.querySelectorAll('.nav-item-link').forEach(link => link.classList.remove('active'));
+                element.classList.add('active');
             }
-
-            document.querySelectorAll('.nav-item-link').forEach(el => el.classList.remove('active'));
-            if(element) element.classList.add('active');
-
-            if(tabId === 'tab-home') {
-                document.getElementById('tab-home').style.display = 'block';
-                document.getElementById('tab-predict-section').style.display = isLoggedIn ? 'block' : 'none';
-                document.querySelectorAll('.tab-section').forEach(el => {
-                    if(el.id !== 'tab-home' && el.id !== 'tab-predict-section') el.style.display = 'none';
-                });
-            } else {
-                document.querySelectorAll('.tab-section').forEach(el => el.style.display = 'none');
-                const target = document.getElementById(tabId);
-                if(target) target.style.display = 'block';
-            }
-
-            if(tabId === 'tab-stats') renderBarChart();
         }
 
         function updateVal(id, lblId) {
-            document.getElementById(lblId).innerText = document.getElementById(id).value + " cm";
+            const val = document.getElementById(id).value;
+            document.getElementById(lblId).innerText = val + " cm";
         }
 
-        function onKernelChange() {
-            const k = document.getElementById('kernelSelect').value;
-            document.getElementById('kernelPlotTitle').innerText = k.toUpperCase();
-            renderBoundaryChart(k);
+        function showAuthTab(type) {
+            if(type === 'login') {
+                document.getElementById('loginFormBox').style.display = 'block';
+                document.getElementById('registerFormBox').style.display = 'none';
+            } else {
+                document.getElementById('loginFormBox').style.display = 'none';
+                document.getElementById('registerFormBox').style.display = 'block';
+            }
         }
 
-        async function runPredict() {
-            if (!isLoggedIn) {
-                openAuthModal();
+        function closeAuthModal() {
+            document.getElementById('authModal').style.display = 'none';
+        }
+
+        async function registerUser() {
+            const username = document.getElementById('registerUsername').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPass = document.getElementById('registerConfirmPassword').value;
+
+            if(!username || !password) {
+                alert("Vui lòng nhập đầy đủ thông tin!");
                 return;
             }
-            const sl = parseFloat(document.getElementById('sl').value);
-            const sw = parseFloat(document.getElementById('sw').value);
-            const pl = parseFloat(document.getElementById('pl').value);
-            const pw = parseFloat(document.getElementById('pw').value);
-            const selectedKernel = document.getElementById('kernelSelect').value;
-
-            const res = await fetch('/predict', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    sepal_length: sl, sepal_width: sw, petal_length: pl, petal_width: pw, kernel: selectedKernel
-                })
-            });
-            const data = await res.json();
-            applyPredictResult(data);
-        }
-
-        async function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            uploadAndPredictImage(file);
-        }
-
-        async function uploadAndPredictImage(file) {
-            if (!isLoggedIn) {
-                openAuthModal();
+            if(password !== confirmPass) {
+                alert("Mật khẩu xác nhận không khớp!");
                 return;
             }
-            const formData = new FormData();
-            formData.append('file', file);
 
             try {
-                const res = await fetch('/predict-image', {
-                    method: 'POST',
+                const formData = new FormData();
+                formData.append("username", username);
+                formData.append("password", password);
+
+                const res = await fetch("/register", {
+                    method: "POST",
                     body: formData
                 });
-                const data = await res.json();
-
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    data.img = e.target.result;
-                    applyPredictResult(data);
-
-                    const pastePreviewContainer = document.getElementById('pastePreviewContainer');
-                    if(pastePreviewContainer) {
-                        pastePreviewContainer.innerHTML = 
-                            `<img src="${e.target.result}" class="preview-pasted-img d-block mx-auto mt-2"><span class="badge bg-success mt-2">Đã nhận diện ảnh</span>`;
-                    }
-                };
-                reader.readAsDataURL(file);
+                
+                if(res.ok) {
+                    alert("Đăng ký thành công! Hãy đăng nhập.");
+                    showAuthTab('login');
+                } else {
+                    const err = await res.json();
+                    alert("Đăng ký thất bại: " + (err.detail || "Lỗi không xác định"));
+                }
             } catch(e) {
-                alert("Không thể phân loại ảnh này!");
+                alert("Lỗi kết nối đến máy chủ!");
             }
         }
 
-        function applyPredictResult(data) {
-            if (data.name) document.getElementById('resName').innerText = data.name;
-            if (data.desc) document.getElementById('resDesc').innerText = data.desc;
-            if (data.img) document.getElementById('resImg').src = data.img;
-            if (data.used_kernel) {
-                document.getElementById('usedKernelBadge').innerHTML = `<i class="bi bi-gear-wide-connected me-1"></i> Kernel: ${data.used_kernel}`;
-                document.getElementById('kernelPlotTitle').innerText = data.used_kernel;
-            }
-
-            if (data.probs) {
-                document.getElementById('prob_0').innerText = data.probs[0] + "%";
-                document.getElementById('bar_0').style.width = data.probs[0] + "%";
-
-                document.getElementById('prob_1').innerText = data.probs[1] + "%";
-                document.getElementById('bar_1').style.width = data.probs[1] + "%";
-
-                document.getElementById('prob_2').innerText = data.probs[2] + "%";
-                document.getElementById('bar_2').style.width = data.probs[2] + "%";
-            }
-
-            const currentKernel = document.getElementById('kernelSelect').value;
-            const currentPetalLen = parseFloat(document.getElementById('pl').value);
-            const currentSepalLen = parseFloat(document.getElementById('sl').value);
-            renderBoundaryChart(currentKernel, currentSepalLen, currentPetalLen);
-
-            addHistory(data.used_kernel || "LINEAR", data.name);
-        }
-
-        function renderBoundaryChart(kernelType, userX = 5.1, userY = 1.4) {
-            const ctx = document.getElementById('boundaryChart').getContext('2d');
-            if (boundaryChartInstance) boundaryChartInstance.destroy();
-
-            const setosaData = [{x: 4.8, y: 1.4}, {x: 5.1, y: 1.5}, {x: 5.4, y: 1.7}, {x: 4.6, y: 1.0}];
-            const versicolorData = [{x: 6.0, y: 4.0}, {x: 6.4, y: 4.5}, {x: 5.7, y: 3.8}, {x: 6.7, y: 4.7}];
-            const virginicaData = [{x: 6.3, y: 6.0}, {x: 7.2, y: 5.8}, {x: 6.9, y: 5.4}, {x: 7.7, y: 6.7}];
-
-            let boundaryLine = [];
-            if(kernelType === 'linear') {
-                boundaryLine = [{x: 4.0, y: 2.2}, {x: 8.0, y: 5.2}];
-            } else if(kernelType === 'rbf') {
-                boundaryLine = [{x: 4.0, y: 2.0}, {x: 5.0, y: 3.0}, {x: 6.0, y: 3.5}, {x: 7.0, y: 3.0}, {x: 8.0, y: 2.0}];
-            } else if(kernelType === 'poly') {
-                boundaryLine = [{x: 4.0, y: 1.5}, {x: 5.5, y: 2.5}, {x: 6.5, y: 4.5}, {x: 8.0, y: 6.5}];
-            } else {
-                boundaryLine = [{x: 4.0, y: 2.5}, {x: 5.5, y: 2.2}, {x: 6.5, y: 4.8}, {x: 8.0, y: 5.0}];
-            }
-
-            boundaryChartInstance = new Chart(ctx, {
-                type: 'scatter',
-                data: {
-                    datasets: [
-                        { label: 'Setosa', data: setosaData, backgroundColor: '#6366f1', pointRadius: 5 },
-                        { label: 'Versicolor', data: versicolorData, backgroundColor: '#f59e0b', pointRadius: 5 },
-                        { label: 'Virginica', data: virginicaData, backgroundColor: '#ef4444', pointRadius: 5 },
-                        { label: 'Điểm bạn chọn', data: [{x: userX, y: userY}], backgroundColor: '#38bdf8', pointRadius: 8, pointStyle: 'star' },
-                        { label: 'Ranh giới (' + kernelType.toUpperCase() + ')', data: boundaryLine, type: 'line', borderColor: '#a855f7', borderWidth: 2, fill: false, pointRadius: 0, showLine: true }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { type: 'linear', position: 'bottom', ticks: { color: '#94a3b8' } },
-                        y: { ticks: { color: '#94a3b8' } }
-                    },
-                    plugins: { legend: { labels: { color: '#f1f5f9', font: { size: 10 } } } }
-                }
-            });
-        }
-
-        function renderBarChart() {
-            const ctx = document.getElementById('barChart').getContext('2d');
-            if (barChartInstance) barChartInstance.destroy();
-
-            barChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['SVM (Linear)', 'SVM (RBF)', 'SVM (Poly)', 'Random Forest', 'KNN'],
-                    datasets: [{
-                        label: 'Độ chính xác (%)',
-                        data: [98.6, 97.3, 96.0, 95.2, 94.0],
-                        backgroundColor: '#6366f1',
-                        borderRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { min: 80, max: 100, ticks: { color: '#94a3b8' } },
-                        x: { ticks: { color: '#94a3b8' } }
-                    },
-                    plugins: { legend: { display: false } }
-                }
-            });
-        }
-
-        function addHistory(method, result) {
-            const now = new Date().toLocaleTimeString();
-            historyLogs.unshift({ time: now, method: method, result: result });
-            updateHistoryTable();
-        }
-
-        function updateHistoryTable() {
-            const tbody = document.getElementById('historyTableBody');
-            if(!tbody) return;
-            tbody.innerHTML = historyLogs.map(item => `
-                <tr>
-                    <td>${item.time}</td>
-                    <td><span class="badge bg-warning text-dark">${item.method}</span></td>
-                    <td><span class="badge bg-primary">${item.result}</span></td>
-                </tr>
-            `).join('');
-        }
-
-        function clearHistory() {
-            historyLogs = [];
-            updateHistoryTable();
-        }
-
-        window.addEventListener('paste', (e) => {
-            const clipboardData = e.clipboardData || window.clipboardData;
-            if (!clipboardData || !clipboardData.items) return;
-
-            for (let item of clipboardData.items) {
-                if (item.type.indexOf('image') !== -1) {
-                    const file = item.getAsFile();
-                    if (file) {
-                        const pasteTabBtn = document.getElementById('paste-tab-btn');
-                        if (pasteTabBtn) {
-                            const bsTab = new bootstrap.Tab(pasteTabBtn);
-                            bsTab.show();
-                        }
-                        uploadAndPredictImage(file);
-                    }
-                    break;
-                }
-            }
-        });
-
-        window.onload = async function() {
-            await checkLoginStatus();
-            document.getElementById('tab-predict-section').style.display = isLoggedIn ? 'block' : 'none';
-            renderBoundaryChart('linear');
-        };
-    </script>
-    </body>
-    </html>
-    """
-@app.post("/api/register")
-def handle_register(username: str = Form(...), password: str = Form(...)):
-    success, message = register_user(username, password)
-    return {"success": success, "message": message}
-
-@app.post("/api/login")
-def handle_login(request: Request, username: str = Form(...), password: str = Form(...)):
-    success, message = login_user(username, password)
-
-    if success:
-        request.session["user"] = username
-
-    return {"success": success, "message": message}
-
-
-@app.get("/api/me")
-def get_current_user(request: Request):
-    username = request.session.get("user")
-    return {
-        "logged_in": bool(username),
-        "username": username
-    }
-
-
-@app.post("/api/logout")
-def logout_user(request: Request):
-    request.session.clear()
-    return {"success": True, "message": "Đã đăng xuất!"}
+        async function loginUser() {
+            const username = document
