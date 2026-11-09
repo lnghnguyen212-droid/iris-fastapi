@@ -17,3 +17,18 @@ def get_connection():
 
 def init_db():
     conn = get_connection()
+    cursor = conn.cursor()
+    
+    # Tự động tạo bảng users nếu chưa tồn tại (chạy cho cả PostgreSQL trên Render lẫn SQLite local)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(255) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL
+        );
+    """)
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print(">>> ĐÃ KHỞI TẠO BẢNG USERS THÀNH CÔNG! <<<")
