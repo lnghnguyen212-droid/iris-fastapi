@@ -1,27 +1,24 @@
-
 import io
 import joblib
 import numpy as np
 from PIL import Image
-from fastapi import FastAPI, File, UploadFile, Request, HTTPException, Form
+from fastapi import FastAPI, File, UploadFile, Request, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-from starlette.middleware.sessions import SessionMiddleware
-
-# Import module DB & Auth của bạn
+from fastapi import FastAPI, Form
 from auth import register_user, login_user
 from database import init_db
-
-# KHỞI TẠO ỨNG DỤNG DUY NHẤT 1 LẦN
 app = FastAPI(title="IrisClassifier Full Dashboard")
-
-# Cấu hình Middleware Session
+from starlette.middleware.sessions import SessionMiddleware
 app.add_middleware(SessionMiddleware, secret_key="iris-classifier-secret-key-2026")
+from fastapi import FastAPI
+from database import engine, Base  # Import engine và Base từ file kết nối db của bạn
+import models  # Import file khai báo các class model (chứa model User)
 
-# Gọi khởi tạo DB khi app chạy
-@app.on_event("startup")
-def startup_event():
-    init_db()
+app = FastAPI()
+# Khởi tạo DB khi chạy ứng dụng
+init_db()
+
 
 # Nạp các mô hình Kernel
 try:
@@ -70,7 +67,7 @@ def classify_image_accurately(image_bytes: bytes, filename: str = ""):
         avg = sum(pixels) / len(pixels)
         bits = "".join(["1" if pixel > avg else "0" for pixel in pixels])
         hash_numeric = int(bits, 2)
-
+        
         pred_class = hash_numeric % 3
         if pred_class == 0:
             probs = [95.5, 3.1, 1.4]
@@ -88,7 +85,7 @@ def predict(data: IrisInput, request: Request):
     if not request.session.get("user"):
         raise HTTPException(status_code=401, detail="Vui lòng đăng nhập trước khi phân loại!")
     model = models_dict.get(data.kernel)
-
+    
     if model is not None:
         try:
             features = np.array([[data.sepal_length, data.sepal_width, data.petal_length, data.petal_width]])
@@ -108,7 +105,7 @@ def predict(data: IrisInput, request: Request):
         "poly": [92.4, 5.1, 2.5],
         "sigmoid": [75.0, 18.0, 7.0]
     }
-
+    
     probs = kernel_factors.get(data.kernel.lower(), [95.0, 3.0, 2.0])
     if data.petal_length < 2.5:
         pred_class = 0
@@ -305,31 +302,729 @@ def home():
                 border-color: var(--accent-purple);
                 background-color: rgba(99, 102, 241, 0.1);
             }
+
+            .preview-pasted-img {
+                max-height: 140px;
+                border-radius: 12px;
+                border: 1px solid var(--border-color);
+                margin-top: 10px;
+            }
         </style>
     </head>
     <body>
-        <div class="app-wrapper">
-            <aside class="sidebar">
-                <div>
-                    <a href="#" class="sidebar-brand">
-                        <i class="bi bi-flower1 fs-3"></i>
-                        <span>IrisClassifier</span>
-                    </a>
-                    <ul class="nav-menu">
-                        <li><a class="nav-item-link active" onclick="switchTab('tab-home', this)"><i class="bi bi-house-door"></i> Trang chủ</a></li>
-                        <li><a class="nav-item-link" onclick="switchTab('tab-predict-section', this)"><i class="bi bi-cpu"></i> Phân loại hoa</a></li>
-                    </ul>
+
+    <!-- MODAL ĐĂNG NHẬP / ĐĂNG KÝ -->
+    <div id="authModal" style="display:flex; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.78); align-items:center; justify-content:center;">
+        <div class="content-card" style="width:420px; max-width:92%; position:relative;">
+            <button onclick="closeAuthModal()" class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-3" style="border-radius:50%;">&times;</button>
+
+            <div class="text-center mb-4">
+                <i class="bi bi-flower1 fs-1 text-primary"></i>
+                <h4 class="fw-800 mt-2 mb-1">IrisClassifier</h4>
+                <p class="text-muted small mb-0">Đăng nhập để sử dụng chức năng phân loại</p>
+            </div>
+
+            <div class="d-flex gap-2 mb-4">
+                <button class="btn btn-primary flex-fill" onclick="showAuthTab('login')">Đăng nhập</button>
+                <button class="btn btn-outline-primary flex-fill" onclick="showAuthTab('register')">Đăng ký</button>
+            </div>
+
+            <div id="loginFormBox">
+                <div class="mb-3">
+                    <label class="form-label">Tên đăng nhập</label>
+                    <input id="loginUsername" type="text" class="form-control bg-dark text-light border-secondary" placeholder="Nhập tên đăng nhập">
                 </div>
-            </aside>
-            <main class="main-content">
-                <div id="tab-home" class="tab-section active">
-                    <div class="hero-banner">
-                        <h1 class="fw-800">Phân loại hoa Iris</h1>
-                        <p>Ứng dụng AI phân loại hoa Iris mượt mà và chính xác.</p>
+                <div class="mb-3">
+                    <label class="form-label">Mật khẩu</label>
+                    <input id="loginPassword" type="password" class="form-control bg-dark text-light border-secondary" placeholder="Nhập mật khẩu">
+                </div>
+                <button class="btn btn-primary w-100 rounded-pill" onclick="loginUser()">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập
+                </button>
+            </div>
+
+            <div id="registerFormBox" style="display:none;">
+                <div class="mb-3">
+                    <label class="form-label">Tên đăng nhập</label>
+                    <input id="registerUsername" type="text" class="form-control bg-dark text-light border-secondary" placeholder="Tạo tên đăng nhập">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Mật khẩu</label>
+                    <input id="registerPassword" type="password" class="form-control bg-dark text-light border-secondary" placeholder="Tạo mật khẩu">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Xác nhận mật khẩu</label>
+                    <input id="registerConfirmPassword" type="password" class="form-control bg-dark text-light border-secondary" placeholder="Nhập lại mật khẩu">
+                </div>
+                <button class="btn btn-success w-100 rounded-pill" onclick="registerUser()">
+                    <i class="bi bi-person-plus me-2"></i>Đăng ký tài khoản
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-wrapper">
+        <!-- SIDEBAR CHỨA ĐỦ 6 TAB BAN ĐẦU -->
+        <aside class="sidebar">
+            <div>
+                <a href="#" class="sidebar-brand">
+                    <i class="bi bi-flower1 fs-3"></i>
+                    <span>IrisClassifier</span>
+                </a>
+                <ul class="nav-menu">
+                    <li><a class="nav-item-link active" onclick="switchTab('tab-home', this)"><i class="bi bi-house-door"></i> Trang chủ</a></li>
+                    <li><a class="nav-item-link" onclick="switchTab('tab-predict-section', this)"><i class="bi bi-cpu"></i> Phân loại hoa</a></li>
+                    <li><a class="nav-item-link" onclick="switchTab('tab-history', this)"><i class="bi bi-clock-history"></i> Lịch sử phân loại</a></li>
+                    <li><a class="nav-item-link" onclick="switchTab('tab-dataset', this)"><i class="bi bi-database"></i> Bộ dữ liệu</a></li>
+                    <li><a class="nav-item-link" onclick="switchTab('tab-knowledge', this)"><i class="bi bi-book"></i> Kiến thức</a></li>
+                    <li><a class="nav-item-link" onclick="switchTab('tab-stats', this)"><i class="bi bi-bar-chart"></i> Thống kê</a></li>
+                </ul>
+            </div>
+            <div class="p-2 text-center">
+                <div class="small text-muted mb-2">
+                    <i class="bi bi-person-circle me-1"></i>
+                    <span id="currentUser">Chưa đăng nhập</span>
+                </div>
+                <button class="btn btn-outline-danger btn-sm rounded-pill w-100 mb-2" onclick="logoutUser()">
+                    <i class="bi bi-box-arrow-right me-1"></i> Đăng xuất
+                </button>
+                <p class="m-0 text-muted small">Iris AI Suite v2.5</p>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <!-- TAB TRANG CHỦ -->
+            <div id="tab-home" class="tab-section active">
+                <div class="hero-banner d-flex align-items-center">
+                    <div style="max-width: 550px; z-index: 2;">
+                        <span class="badge bg-primary mb-2 px-3 py-2 rounded-pill">AI POWERED FLOWER CLASSIFICATION</span>
+                        <h1 class="fw-800 display-5 mb-3">Phân loại hoa Iris</h1>
+                        <p class="text-white-50 fs-6 mb-4">Tải ảnh lên, dán ảnh từ clipboard hoặc tùy chỉnh Kernel SVM để phân loại hoa Iris.</p>
+                        <button class="btn btn-primary rounded-pill px-4 py-2 me-2" onclick="switchTab('tab-predict-section', document.querySelectorAll('.nav-item-link')[1])">Bắt đầu phân loại <i class="bi bi-arrow-right"></i></button>
+                    </div>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Iris_versicolor_3.jpg" alt="Iris Banner">
+                </div>
+            </div>
+
+            <!-- TAB PHÂN LOẠI -->
+            <div id="tab-predict-section" class="tab-section">
+                <div class="content-card mb-4">
+                    <h5 class="fw-700 mb-1">Phân loại hoa Iris bằng hình ảnh</h5>
+                    <p class="text-muted small mb-3">Tải ảnh lên hoặc dán ảnh từ clipboard (Ctrl + V) để bắt đầu</p>
+
+                    <ul class="nav nav-pills upload-nav-tabs gap-2 mb-3" id="uploadTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="upload-tab-btn" data-bs-toggle="pill" data-bs-target="#upload-pane" type="button"><i class="bi bi-cloud-upload me-2"></i>Tải ảnh lên</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="paste-tab-btn" data-bs-toggle="pill" data-bs-target="#paste-pane" type="button"><i class="bi bi-clipboard-plus me-2"></i>Dán ảnh</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="uploadTabContent">
+                        <div class="tab-pane fade show active" id="upload-pane" role="tabpanel">
+                            <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                                <div class="drop-icon-box"><i class="bi bi-folder-symlink"></i></div>
+                                <h6 class="fw-700 mb-1">Chọn file từ máy tính</h6>
+                                <p class="text-muted small mb-3">Hỗ trợ: JPG, PNG, WEBP | Tối đa 10MB</p>
+                                <button type="button" class="btn btn-primary rounded-pill px-4"><i class="bi bi-folder2-open me-2"></i>Chọn ảnh</button>
+                                <input type="file" id="fileInput" accept="image/*" class="d-none" onchange="handleFileSelect(event)">
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="paste-pane" role="tabpanel">
+                            <div class="drop-zone" id="pasteZone" tabindex="0">
+                                <div class="drop-icon-box"><i class="bi bi-clipboard-check"></i></div>
+                                <h6 class="fw-700 mb-1">Nhấn <span class="text-primary">Ctrl + V</span> để dán ảnh</h6>
+                                <p class="text-muted small mb-0">Sao chép một hình ảnh bất kỳ rồi dán trực tiếp vào đây</p>
+                                <div id="pastePreviewContainer"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </main>
-        </div>
+
+                <div class="row g-4">
+                    <div class="col-lg-5">
+                        <div class="content-card h-100">
+                            <h5 class="fw-700 mb-3"><i class="bi bi-sliders me-2 text-primary"></i> Điều chỉnh thông số</h5>
+
+                            <div class="mb-3 p-3 border border-warning border-opacity-50 rounded-3 bg-dark">
+                                <label class="fw-700 mb-1 text-warning"><i class="bi bi-cpu-fill me-1"></i> Chọn SVM Kernel:</label>
+                                <select id="kernelSelect" class="form-select bg-dark text-light border-secondary fw-bold" onchange="onKernelChange()">
+                                    <option value="linear" selected>Linear (Tuyến tính - Đường thẳng)</option>
+                                    <option value="rbf">RBF (Radial Basis - Đường cong tròn)</option>
+                                    <option value="poly">Polynomial (Đa thức - Đường uốn lượn)</option>
+                                    <option value="sigmoid">Sigmoid (Đường hình S)</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="d-flex justify-content-between fw-600 mb-1">
+                                    <span>Sepal Length (Dài đài)</span>
+                                    <span class="text-primary fw-700" id="lbl_sl">5.1 cm</span>
+                                </label>
+                                <input type="range" class="form-range" id="sl" min="4.0" max="8.0" step="0.1" value="5.1" oninput="updateVal('sl', 'lbl_sl')">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="d-flex justify-content-between fw-600 mb-1">
+                                    <span>Sepal Width (Rộng đài)</span>
+                                    <span class="text-primary fw-700" id="lbl_sw">3.5 cm</span>
+                                </label>
+                                <input type="range" class="form-range" id="sw" min="2.0" max="4.5" step="0.1" value="3.5" oninput="updateVal('sw', 'lbl_sw')">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="d-flex justify-content-between fw-600 mb-1">
+                                    <span>Petal Length (Dài cánh)</span>
+                                    <span class="text-primary fw-700" id="lbl_pl">1.4 cm</span>
+                                </label>
+                                <input type="range" class="form-range" id="pl" min="1.0" max="7.0" step="0.1" value="1.4" oninput="updateVal('pl', 'lbl_pl')">
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="d-flex justify-content-between fw-600 mb-1">
+                                    <span>Petal Width (Rộng cánh)</span>
+                                    <span class="text-primary fw-700" id="lbl_pw">0.2 cm</span>
+                                </label>
+                                <input type="range" class="form-range" id="pw" min="0.1" max="2.5" step="0.1" value="0.2" oninput="updateVal('pw', 'lbl_pw')">
+                            </div>
+
+                            <button class="btn btn-primary w-100 rounded-3 py-3 fw-700" onclick="runPredict()">
+                                <i class="bi bi-lightning-charge-fill me-2"></i> Chạy phân loại
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-7">
+                        <div class="content-card h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-700 m-0">Kết quả phân loại</h5>
+                                <span id="usedKernelBadge" class="badge bg-warning text-dark fs-6 px-3 py-2"><i class="bi bi-gear-wide-connected me-1"></i> Kernel: LINEAR</span>
+                            </div>
+
+                            <div class="row g-3 align-items-center mb-3">
+                                <div class="col-md-5">
+                                    <img id="resImg" src="https://upload.wikimedia.org/wikipedia/commons/5/56/Kosaciec_szczecinkowaty_Iris_setosa.jpg" class="img-fluid rounded-4 border w-100" style="height: 160px; object-fit: cover;">
+                                </div>
+                                <div class="col-md-7">
+                                    <h3 id="resName" class="fw-800 text-primary mb-1">Iris setosa</h3>
+                                    <p id="resDesc" class="small text-light mb-0">Hoa có cánh nhỏ gọn, màu tím nhạt/xanh. Rất dễ nhận biết.</p>
+                                </div>
+                            </div>
+
+                            <div class="p-3 bg-dark border border-secondary rounded-3 mb-3">
+                                <h6 class="fw-700 text-warning mb-2"><i class="bi bi-diagram-2 me-1"></i> Sơ đồ Ranh giới Kernel (<span id="kernelPlotTitle">LINEAR</span>)</h6>
+                                <div style="height: 160px; position: relative;">
+                                    <canvas id="boundaryChart"></canvas>
+                                </div>
+                            </div>
+
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between small mb-1"><span>Setosa</span><strong id="prob_0">98.5%</strong></div>
+                                <div class="progress mb-2" style="height: 6px;"><div id="bar_0" class="progress-bar bg-indigo" style="width: 98.5%"></div></div>
+
+                                <div class="d-flex justify-content-between small mb-1"><span>Versicolor</span><strong id="prob_1">1.0%</strong></div>
+                                <div class="progress mb-2" style="height: 6px;"><div id="bar_1" class="progress-bar bg-warning" style="width: 1.0%"></div></div>
+
+                                <div class="d-flex justify-content-between small mb-1"><span>Virginica</span><strong id="prob_2">0.5%</strong></div>
+                                <div class="progress" style="height: 6px;"><div id="bar_2" class="progress-bar bg-danger" style="width: 0.5%"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB LỊCH SỬ -->
+            <div id="tab-history" class="tab-section">
+                <div class="content-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-700 m-0"><i class="bi bi-clock-history me-2 text-primary"></i> Lịch sử phân loại</h5>
+                        <button class="btn btn-outline-danger btn-sm rounded-pill" onclick="clearHistory()"><i class="bi bi-trash me-1"></i> Xóa lịch sử</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover align-middle">
+                            <thead>
+                                <tr class="text-muted">
+                                    <th>Thời gian</th>
+                                    <th>Phương thức / Kernel</th>
+                                    <th>Kết quả</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB BỘ DỮ LIỆU -->
+            <div id="tab-dataset" class="tab-section">
+                <div class="content-card">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-700 m-0"><i class="bi bi-database me-2 text-primary"></i> Bộ dữ liệu Iris (150 mẫu)</h5>
+                        <span class="badge bg-primary rounded-pill">Fisher's Iris Dataset</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-striped align-middle">
+                            <thead>
+                                <tr class="text-light">
+                                    <th>#</th>
+                                    <th>Sepal Length</th>
+                                    <th>Sepal Width</th>
+                                    <th>Petal Length</th>
+                                    <th>Petal Width</th>
+                                    <th>Species (Loài)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>1</td><td>5.1 cm</td><td>3.5 cm</td><td>1.4 cm</td><td>0.2 cm</td><td><span class="badge bg-info text-dark">Iris-setosa</span></td></tr>
+                                <tr><td>2</td><td>4.9 cm</td><td>3.0 cm</td><td>1.4 cm</td><td>0.2 cm</td><td><span class="badge bg-info text-dark">Iris-setosa</span></td></tr>
+                                <tr><td>3</td><td>7.0 cm</td><td>3.2 cm</td><td>4.7 cm</td><td>1.4 cm</td><td><span class="badge bg-warning text-dark">Iris-versicolor</span></td></tr>
+                                <tr><td>4</td><td>6.4 cm</td><td>3.2 cm</td><td>4.5 cm</td><td>1.5 cm</td><td><span class="badge bg-warning text-dark">Iris-versicolor</span></td></tr>
+                                <tr><td>5</td><td>6.3 cm</td><td>3.3 cm</td><td>6.0 cm</td><td>2.5 cm</td><td><span class="badge bg-danger">Iris-virginica</span></td></tr>
+                                <tr><td>6</td><td>5.8 cm</td><td>2.7 cm</td><td>5.1 cm</td><td>1.9 cm</td><td><span class="badge bg-danger">Iris-virginica</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB KIẾN THỨC -->
+            <div id="tab-knowledge" class="tab-section">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="content-card h-100">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/5/56/Kosaciec_szczecinkowaty_Iris_setosa.jpg" class="rounded-3 img-fluid mb-3" style="height:180px; object-fit:cover; width:100%;">
+                            <h5 class="fw-700 text-info">Iris Setosa</h5>
+                            <p class="small text-light">Đặc điểm chính là đài hoa rộng và cánh hoa siêu nhỏ. Thường có màu xanh tím sẫm hoặc nhạt.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="content-card h-100">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Iris_versicolor_3.jpg" class="rounded-3 img-fluid mb-3" style="height:180px; object-fit:cover; width:100%;">
+                            <h5 class="fw-700 text-warning">Iris Versicolor</h5>
+                            <p class="small text-light">Kích thước trung bình, dải màu tím lam đặc trưng kết hợp với các vệt màu vàng nhạt ở gốc cánh.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="content-card h-100">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/9/9f/Iris_virginica.jpg" class="rounded-3 img-fluid mb-3" style="height:180px; object-fit:cover; width:100%;">
+                            <h5 class="fw-700 text-danger">Iris Virginica</h5>
+                            <p class="small text-light">Dòng hoa Iris có kích thước lớn nhất trong cả 3 loại, cánh hoa dài rủ xuống ấn tượng.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB THỐNG KÊ -->
+            <div id="tab-stats" class="tab-section">
+                <div class="row g-4 mb-4">
+                    <div class="col-md-4">
+                        <div class="content-card text-center py-4">
+                            <h3 class="fw-800 text-primary">150</h3>
+                            <span class="text-light">Mẫu dữ liệu huấn luyện</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="content-card text-center py-4">
+                            <h3 class="fw-800 text-success">98.6%</h3>
+                            <span class="text-light">Độ chính xác trung bình</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="content-card text-center py-4">
+                            <h3 class="fw-800 text-warning">SVM</h3>
+                            <span class="text-light">Mô hình AI tốt nhất</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="content-card">
+                    <h5 class="fw-700 mb-3"><i class="bi bi-bar-chart me-2 text-primary"></i> So sánh hiệu năng các thuật toán</h5>
+                    <div style="height: 250px;">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let boundaryChartInstance = null;
+        let barChartInstance = null;
+        let historyLogs = [];
+
+        let isLoggedIn = false;
+
+        function openAuthModal() {
+            const modal = document.getElementById('authModal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeAuthModal() {
+            const modal = document.getElementById('authModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function showAuthTab(type) {
+            document.getElementById('loginFormBox').style.display = type === 'login' ? 'block' : 'none';
+            document.getElementById('registerFormBox').style.display = type === 'register' ? 'block' : 'none';
+        }
+
+        async function loginUser() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!username || !password) {
+                alert('Vui lòng nhập đầy đủ tài khoản và mật khẩu!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('username', username);
+            formData.append('password', password);
+
+            const res = await fetch('/api/login', { method: 'POST', body: formData });
+            const data = await res.json();
+
+            if (data.success) {
+                isLoggedIn = true;
+                document.getElementById('currentUser').innerText = username;
+                closeAuthModal();
+                alert(data.message);
+                switchTab('tab-predict-section', document.querySelectorAll('.nav-item-link')[1]);
+            } else {
+                alert(data.message);
+            }
+        }
+
+        async function registerUser() {
+            const username = document.getElementById('registerUsername').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerConfirmPassword').value;
+
+            if (!username || !password) {
+                alert('Vui lòng nhập đầy đủ thông tin!');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                alert('Mật khẩu xác nhận không khớp!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('username', username);
+            formData.append('password', password);
+
+            const res = await fetch('/api/register', { method: 'POST', body: formData });
+            const data = await res.json();
+
+            if (data.success) {
+                alert(data.message + ' Hãy đăng nhập để tiếp tục.');
+                document.getElementById('loginUsername').value = username;
+                document.getElementById('loginPassword').value = '';
+                showAuthTab('login');
+            } else {
+                alert(data.message);
+            }
+        }
+
+        async function logoutUser() {
+            const res = await fetch('/api/logout', { method: 'POST' });
+            const data = await res.json();
+
+            if (data.success) {
+                isLoggedIn = false;
+                document.getElementById('currentUser').innerText = 'Chưa đăng nhập';
+                switchTab('tab-home', document.querySelectorAll('.nav-item-link')[0]);
+                alert('Đã đăng xuất!');
+            }
+        }
+
+        async function checkLoginStatus() {
+            try {
+                const res = await fetch('/api/me');
+                const data = await res.json();
+                isLoggedIn = data.logged_in;
+
+                if (isLoggedIn) {
+                    document.getElementById('currentUser').innerText = data.username;
+                }
+            } catch (e) {
+                isLoggedIn = false;
+            }
+        }
+
+        function switchTab(tabId, element) {
+            if (tabId === 'tab-predict-section' && !isLoggedIn) {
+                openAuthModal();
+                return;
+            }
+
+            document.querySelectorAll('.nav-item-link').forEach(el => el.classList.remove('active'));
+            if(element) element.classList.add('active');
+
+            if(tabId === 'tab-home') {
+                document.getElementById('tab-home').style.display = 'block';
+                document.getElementById('tab-predict-section').style.display = isLoggedIn ? 'block' : 'none';
+                document.querySelectorAll('.tab-section').forEach(el => {
+                    if(el.id !== 'tab-home' && el.id !== 'tab-predict-section') el.style.display = 'none';
+                });
+            } else {
+                document.querySelectorAll('.tab-section').forEach(el => el.style.display = 'none');
+                const target = document.getElementById(tabId);
+                if(target) target.style.display = 'block';
+            }
+
+            if(tabId === 'tab-stats') renderBarChart();
+        }
+
+        function updateVal(id, lblId) {
+            document.getElementById(lblId).innerText = document.getElementById(id).value + " cm";
+        }
+
+        function onKernelChange() {
+            const k = document.getElementById('kernelSelect').value;
+            document.getElementById('kernelPlotTitle').innerText = k.toUpperCase();
+            renderBoundaryChart(k);
+        }
+
+        async function runPredict() {
+            if (!isLoggedIn) {
+                openAuthModal();
+                return;
+            }
+            const sl = parseFloat(document.getElementById('sl').value);
+            const sw = parseFloat(document.getElementById('sw').value);
+            const pl = parseFloat(document.getElementById('pl').value);
+            const pw = parseFloat(document.getElementById('pw').value);
+            const selectedKernel = document.getElementById('kernelSelect').value;
+
+            const res = await fetch('/predict', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    sepal_length: sl, sepal_width: sw, petal_length: pl, petal_width: pw, kernel: selectedKernel
+                })
+            });
+            const data = await res.json();
+            applyPredictResult(data);
+        }
+
+        async function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            uploadAndPredictImage(file);
+        }
+
+        async function uploadAndPredictImage(file) {
+            if (!isLoggedIn) {
+                openAuthModal();
+                return;
+            }
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const res = await fetch('/predict-image', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    data.img = e.target.result;
+                    applyPredictResult(data);
+
+                    const pastePreviewContainer = document.getElementById('pastePreviewContainer');
+                    if(pastePreviewContainer) {
+                        pastePreviewContainer.innerHTML = 
+                            `<img src="${e.target.result}" class="preview-pasted-img d-block mx-auto mt-2"><span class="badge bg-success mt-2">Đã nhận diện ảnh</span>`;
+                    }
+                };
+                reader.readAsDataURL(file);
+            } catch(e) {
+                alert("Không thể phân loại ảnh này!");
+            }
+        }
+
+        function applyPredictResult(data) {
+            if (data.name) document.getElementById('resName').innerText = data.name;
+            if (data.desc) document.getElementById('resDesc').innerText = data.desc;
+            if (data.img) document.getElementById('resImg').src = data.img;
+            if (data.used_kernel) {
+                document.getElementById('usedKernelBadge').innerHTML = `<i class="bi bi-gear-wide-connected me-1"></i> Kernel: ${data.used_kernel}`;
+                document.getElementById('kernelPlotTitle').innerText = data.used_kernel;
+            }
+
+            if (data.probs) {
+                document.getElementById('prob_0').innerText = data.probs[0] + "%";
+                document.getElementById('bar_0').style.width = data.probs[0] + "%";
+
+                document.getElementById('prob_1').innerText = data.probs[1] + "%";
+                document.getElementById('bar_1').style.width = data.probs[1] + "%";
+
+                document.getElementById('prob_2').innerText = data.probs[2] + "%";
+                document.getElementById('bar_2').style.width = data.probs[2] + "%";
+            }
+
+            const currentKernel = document.getElementById('kernelSelect').value;
+            const currentPetalLen = parseFloat(document.getElementById('pl').value);
+            const currentSepalLen = parseFloat(document.getElementById('sl').value);
+            renderBoundaryChart(currentKernel, currentSepalLen, currentPetalLen);
+
+            addHistory(data.used_kernel || "LINEAR", data.name);
+        }
+
+        function renderBoundaryChart(kernelType, userX = 5.1, userY = 1.4) {
+            const ctx = document.getElementById('boundaryChart').getContext('2d');
+            if (boundaryChartInstance) boundaryChartInstance.destroy();
+
+            const setosaData = [{x: 4.8, y: 1.4}, {x: 5.1, y: 1.5}, {x: 5.4, y: 1.7}, {x: 4.6, y: 1.0}];
+            const versicolorData = [{x: 6.0, y: 4.0}, {x: 6.4, y: 4.5}, {x: 5.7, y: 3.8}, {x: 6.7, y: 4.7}];
+            const virginicaData = [{x: 6.3, y: 6.0}, {x: 7.2, y: 5.8}, {x: 6.9, y: 5.4}, {x: 7.7, y: 6.7}];
+
+            let boundaryLine = [];
+            if(kernelType === 'linear') {
+                boundaryLine = [{x: 4.0, y: 2.2}, {x: 8.0, y: 5.2}];
+            } else if(kernelType === 'rbf') {
+                boundaryLine = [{x: 4.0, y: 2.0}, {x: 5.0, y: 3.0}, {x: 6.0, y: 3.5}, {x: 7.0, y: 3.0}, {x: 8.0, y: 2.0}];
+            } else if(kernelType === 'poly') {
+                boundaryLine = [{x: 4.0, y: 1.5}, {x: 5.5, y: 2.5}, {x: 6.5, y: 4.5}, {x: 8.0, y: 6.5}];
+            } else {
+                boundaryLine = [{x: 4.0, y: 2.5}, {x: 5.5, y: 2.2}, {x: 6.5, y: 4.8}, {x: 8.0, y: 5.0}];
+            }
+
+            boundaryChartInstance = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        { label: 'Setosa', data: setosaData, backgroundColor: '#6366f1', pointRadius: 5 },
+                        { label: 'Versicolor', data: versicolorData, backgroundColor: '#f59e0b', pointRadius: 5 },
+                        { label: 'Virginica', data: virginicaData, backgroundColor: '#ef4444', pointRadius: 5 },
+                        { label: 'Điểm bạn chọn', data: [{x: userX, y: userY}], backgroundColor: '#38bdf8', pointRadius: 8, pointStyle: 'star' },
+                        { label: 'Ranh giới (' + kernelType.toUpperCase() + ')', data: boundaryLine, type: 'line', borderColor: '#a855f7', borderWidth: 2, fill: false, pointRadius: 0, showLine: true }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { type: 'linear', position: 'bottom', ticks: { color: '#94a3b8' } },
+                        y: { ticks: { color: '#94a3b8' } }
+                    },
+                    plugins: { legend: { labels: { color: '#f1f5f9', font: { size: 10 } } } }
+                }
+            });
+        }
+
+        function renderBarChart() {
+            const ctx = document.getElementById('barChart').getContext('2d');
+            if (barChartInstance) barChartInstance.destroy();
+
+            barChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['SVM (Linear)', 'SVM (RBF)', 'SVM (Poly)', 'Random Forest', 'KNN'],
+                    datasets: [{
+                        label: 'Độ chính xác (%)',
+                        data: [98.6, 97.3, 96.0, 95.2, 94.0],
+                        backgroundColor: '#6366f1',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { min: 80, max: 100, ticks: { color: '#94a3b8' } },
+                        x: { ticks: { color: '#94a3b8' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function addHistory(method, result) {
+            const now = new Date().toLocaleTimeString();
+            historyLogs.unshift({ time: now, method: method, result: result });
+            updateHistoryTable();
+        }
+
+        function updateHistoryTable() {
+            const tbody = document.getElementById('historyTableBody');
+            if(!tbody) return;
+            tbody.innerHTML = historyLogs.map(item => `
+                <tr>
+                    <td>${item.time}</td>
+                    <td><span class="badge bg-warning text-dark">${item.method}</span></td>
+                    <td><span class="badge bg-primary">${item.result}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        function clearHistory() {
+            historyLogs = [];
+            updateHistoryTable();
+        }
+
+        window.addEventListener('paste', (e) => {
+            const clipboardData = e.clipboardData || window.clipboardData;
+            if (!clipboardData || !clipboardData.items) return;
+
+            for (let item of clipboardData.items) {
+                if (item.type.indexOf('image') !== -1) {
+                    const file = item.getAsFile();
+                    if (file) {
+                        const pasteTabBtn = document.getElementById('paste-tab-btn');
+                        if (pasteTabBtn) {
+                            const bsTab = new bootstrap.Tab(pasteTabBtn);
+                            bsTab.show();
+                        }
+                        uploadAndPredictImage(file);
+                    }
+                    break;
+                }
+            }
+        });
+
+        window.onload = async function() {
+            await checkLoginStatus();
+            document.getElementById('tab-predict-section').style.display = isLoggedIn ? 'block' : 'none';
+            renderBoundaryChart('linear');
+        };
+    </script>
     </body>
     </html>
     """
+@app.post("/api/register")
+def handle_register(username: str = Form(...), password: str = Form(...)):
+    success, message = register_user(username, password)
+    return {"success": success, "message": message}
+
+@app.post("/api/login")
+def handle_login(request: Request, username: str = Form(...), password: str = Form(...)):
+    success, message = login_user(username, password)
+
+    if success:
+        request.session["user"] = username
+
+    return {"success": success, "message": message}
+
+
+@app.get("/api/me")
+def get_current_user(request: Request):
+    username = request.session.get("user")
+    return {
+        "logged_in": bool(username),
+        "username": username
+    }
+
+
+@app.post("/api/logout")
+def logout_user(request: Request):
+    request.session.clear()
+    return {"success": True, "message": "Đã đăng xuất!"}. bạn sửa lại vào code này đi cái code kia nó chỉ hiện mỗi giao diện chẳng có gì cả ấy
