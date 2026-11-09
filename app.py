@@ -132,6 +132,36 @@ async def predict_image(request: Request, file: UploadFile = File(...)):
     res["probs"] = probs
     res["used_kernel"] = "IMAGE_ANALYSIS"
     return res
+@app.post("/register")
+def api_register(username: str = Form(...), password: str = Form(...)):
+    # Gọi hàm register_user từ module auth của bạn
+    result = register_user(username, password)
+    
+    # Nếu hàm trả về tuple (ví dụ: success, message) hoặc boolean
+    if isinstance(result, tuple):
+        success, msg = result
+        if not success:
+            raise HTTPException(status_code=400, detail=msg)
+    elif not result:
+        raise HTTPException(status_code=400, detail="Tài khoản đã tồn tại hoặc không hợp lệ!")
+        
+    return {"message": "Đăng ký thành công"}
+
+@app.post("/login")
+def api_login(request: Request, username: str = Form(...), password: str = Form(...)):
+    # Gọi hàm login_user từ module auth của bạn
+    user = login_user(username, password)
+    if not user:
+        raise HTTPException(status_code=400, detail="Tên đăng nhập hoặc mật khẩu không chính xác!")
+    
+    # Lưu phiên đăng nhập vào session
+    request.session["user"] = username
+    return {"message": "Đăng nhập thành công", "username": username}
+
+@app.post("/logout")
+def api_logout(request: Request):
+    request.session.clear()
+    return {"message": "Đăng xuất thành công"}
 
 @app.get("/", response_class=HTMLResponse)
 def home():
