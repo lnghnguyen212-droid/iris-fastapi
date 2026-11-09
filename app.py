@@ -11,6 +11,16 @@ from database import init_db
 app = FastAPI(title="IrisClassifier Full Dashboard")
 from starlette.middleware.sessions import SessionMiddleware
 app.add_middleware(SessionMiddleware, secret_key="iris-classifier-secret-key-2026")
+from fastapi import FastAPI
+from database import engine, Base  # Import engine và Base từ file kết nối db của bạn
+import models  # Import file khai báo các class model (chứa model User)
+
+app = FastAPI()
+
+# Bổ sung đoạn này để tự động tạo tất cả bảng chưa có khi app khởi chạy
+@app.on_event("startup")
+def startup_event():
+    Base.metadata.create_all(bind=engine)
 # Khởi tạo DB khi chạy ứng dụng
 init_db()
 
