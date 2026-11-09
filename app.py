@@ -9,7 +9,12 @@ from starlette.middleware.sessions import SessionMiddleware
 
 # Import module DB & Auth của bạn
 from auth import register_user, login_user
-from database import engine, Base, init_db
+from database import init_db
+
+# Gọi khởi tạo DB khi app chạy
+@app.on_event("startup")
+def startup_event():
+    init_db()
 import models  # Đảm bảo import models để SQLAlchemy nhận diện bảng User
 
 # KHỞI TẠO ỨNG DỤNG DUY NHẤT 1 LẦN
