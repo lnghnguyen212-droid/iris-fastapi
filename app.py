@@ -1,3 +1,4 @@
+
 import io
 import joblib
 import numpy as np
@@ -11,22 +12,16 @@ from starlette.middleware.sessions import SessionMiddleware
 from auth import register_user, login_user
 from database import init_db
 
-# KHỞI TẠO ỨNG DỤNG DUY NHẤT 1 LẦN (phải nằm TRƯỚC @app.on_event)
+# KHỞI TẠO ỨNG DỤNG DUY NHẤT 1 LẦN
 app = FastAPI(title="IrisClassifier Full Dashboard")
 
 # Cấu hình Middleware Session
 app.add_middleware(SessionMiddleware, secret_key="iris-classifier-secret-key-2026")
 
-
-# TỰ ĐỘNG TẠO BẢNG KHI SERVER KHỞI ĐỘNG (chỉ 1 hàm startup duy nhất)
+# Gọi khởi tạo DB khi app chạy
 @app.on_event("startup")
 def startup_event():
-    try:
-        init_db()
-        print(">>> DA KHOI TAO DATABASE THANH CONG <<<")
-    except Exception as e:
-        print(f"Lỗi khởi tạo DB: {e}")
-
+    init_db()
 
 # Nạp các mô hình Kernel
 try:
@@ -34,14 +29,12 @@ try:
 except Exception:
     models_dict = {}
 
-
 class IrisInput(BaseModel):
     sepal_length: float
     sepal_width: float
     petal_length: float
     petal_width: float
     kernel: str = "linear"
-
 
 species_data = {
     0: {
@@ -60,7 +53,6 @@ species_data = {
         "img": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Iris_virginica.jpg",
     },
 }
-
 
 def classify_image_accurately(image_bytes: bytes, filename: str = ""):
     fname = filename.lower()
@@ -91,7 +83,6 @@ def classify_image_accurately(image_bytes: bytes, filename: str = ""):
     except Exception:
         return 0, [98.5, 1.0, 0.5]
 
-
 @app.post("/predict")
 def predict(data: IrisInput, request: Request):
     if not request.session.get("user"):
@@ -115,7 +106,7 @@ def predict(data: IrisInput, request: Request):
         "linear": [98.5, 1.0, 0.5],
         "rbf": [96.2, 2.8, 1.0],
         "poly": [92.4, 5.1, 2.5],
-        "sigmoid": [75.0, 18.0, 7.0],
+        "sigmoid": [75.0, 18.0, 7.0]
     }
 
     probs = kernel_factors.get(data.kernel.lower(), [95.0, 3.0, 2.0])
@@ -133,7 +124,6 @@ def predict(data: IrisInput, request: Request):
     res["used_kernel"] = data.kernel.upper()
     return res
 
-
 @app.post("/predict-image")
 async def predict_image(request: Request, file: UploadFile = File(...)):
     if not request.session.get("user"):
@@ -145,7 +135,6 @@ async def predict_image(request: Request, file: UploadFile = File(...)):
     res["probs"] = probs
     res["used_kernel"] = "IMAGE_ANALYSIS"
     return res
-
 
 @app.get("/", response_class=HTMLResponse)
 def home():
