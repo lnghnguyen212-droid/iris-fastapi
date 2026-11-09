@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 from auth import register_user, login_user
-from database import init_db, engine, Base
+from database import init_db
 
 # Khởi tạo ứng dụng FastAPI đặt lên đầu
 app = FastAPI(title="IrisClassifier Full Dashboard")
